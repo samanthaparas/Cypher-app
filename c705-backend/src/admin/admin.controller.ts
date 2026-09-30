@@ -97,8 +97,8 @@ export class AdminController {
    */
   @Get('recent-cyphers')
   async getRecentCyphers(
-    @Query('limit') limit?: string,
     @CurrentUser() user: any,
+    @Query('limit') limit?: string,
   ) {
     return this.adminService.getRecentCyphers(limit ? parseInt(limit) : 4);
   }
@@ -108,8 +108,8 @@ export class AdminController {
    */
   @Get('events')
   async getEvents(
-    @Query('limit') limit?: string,
     @CurrentUser() user: any,
+    @Query('limit') limit?: string,
   ) {
     return this.adminService.getUpcomingEvents(limit ? parseInt(limit) : 6);
   }

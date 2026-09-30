@@ -58,8 +58,8 @@ export class BeatsController {
   async getBeats(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('bpm', new DefaultValuePipe(0), ParseIntPipe) bpm: number,
     @Query('genre') genre?: string,
-    @Query('bpm', new DefaultValuePipe(0), ParseIntPipe) bpm?: number,
     @Query('mood') mood?: string,
   ) {
     return this.beatsService.getBeats(

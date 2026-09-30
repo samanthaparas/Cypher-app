@@ -151,10 +151,6 @@ export class JournalistInvitesService {
 
     const invites = await this.prisma.journalistInvite.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        // We can't include createdBy user relation without adding it to schema
-        // For now, just return the createdBy ID
-      },
     });
 
     return invites;

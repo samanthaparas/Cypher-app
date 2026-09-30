@@ -118,17 +118,16 @@ export class CyphersService {
     }
 
     // Check if user has already submitted
-    let userEntry = null;
-    if (userId) {
-      userEntry = await this.prisma.cypherEntry.findUnique({
-        where: {
-          cypherId_userId: {
-            cypherId,
-            userId,
+    const userEntry = userId
+      ? await this.prisma.cypherEntry.findUnique({
+          where: {
+            cypherId_userId: {
+              cypherId,
+              userId,
+            },
           },
-        },
-      });
-    }
+        })
+      : null;
 
     return {
       ...cypher,

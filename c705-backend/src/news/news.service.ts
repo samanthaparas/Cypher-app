@@ -34,7 +34,7 @@ interface GNewsResponse {
   articles: GNewsArticle[];
 }
 
-interface CleanedArticle {
+export interface CleanedArticle {
   id: string;
   title: string;
   summary: string;
