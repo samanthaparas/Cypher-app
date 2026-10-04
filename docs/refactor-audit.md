@@ -15,7 +15,7 @@ Nothing in this document has been changed in code yet. It is a map and a plan.
 ## How the audit was done (and its limits)
 
 - Findings come from repository-wide searches (`grep`, file sizes, counting patterns) plus reading the files named below.
-- **Counts are real, but not every file was read line by line.** Some code that looks duplicated may differ in small, intentional ways. Each item should be re-checked when we start it.
+- **Counts are real, but not every file was read line by line.** Some code that looks duplicated may differ in small, intentional ways. Each item should be re-checked.
 - The admin panel was only skimmed.
 - Nothing was compiled or run as part of the audit.
 - The numbers below can be reproduced; see [Reproducing the numbers](#reproducing-the-numbers).

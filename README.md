@@ -6,8 +6,6 @@ Cypher is a mobile platform for hip-hop: a place where **artists** share freesty
 
 The project is an iOS app (SwiftUI) backed by a NestJS API, a PostgreSQL database, and a Next.js admin panel. In the code the app is named **C705**; "Cypher" is the product name used in this repository.
 
-> **Where this document comes from.** This README was written by reading the code, database schema, and existing notes in the repository. It separates **what is built** from **what is partly built** and **what is only planned**. Anything described as a "direction" or "possibility" is a proposal, not a commitment. Where something could not be verified, it says so.
-
 ---
 
 ## Table of contents
@@ -327,9 +325,6 @@ The source of truth is [`c705_db/prisma/schema.prisma`](c705_db/prisma/schema.pr
 ---
 
 ## 9. Getting started
-
-> This is a summary based on the repository. The backend folder has its own `QUICK_START.md` and troubleshooting notes that go deeper. If anything here disagrees with how things behave on your machine, trust what you observe and update this section.
-
 ### Prerequisites
 - macOS with **Xcode** (the project targets a very recent iOS; see concern #13)
 - **Node.js** and npm
