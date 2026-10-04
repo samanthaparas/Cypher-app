@@ -36,7 +36,7 @@ struct TrendingView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(.systemBackground))
+            .background(Theme.background)
             
             // Sub-tab content
             Group {
@@ -72,7 +72,7 @@ struct SubTabButton: View {
                 .foregroundColor(isSelected ? .white : .primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(.systemGray6))
+                .background(isSelected ? Theme.accent : Theme.card)
                 .cornerRadius(20)
                 .scaleEffect(isSelected ? 1.0 : 0.95)
         }
