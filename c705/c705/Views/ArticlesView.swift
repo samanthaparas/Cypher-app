@@ -23,19 +23,19 @@ struct ArticlesView: View {
             VStack(spacing: 0) {
                 // Source selector
                 HStack(spacing: 16) {
-                    SourceButton(title: "All", isSelected: selectedSource == "All") {
+                    PillButton(title: "All", isSelected: selectedSource == "All") {
                         selectedSource = "All"
                         Task {
                             await viewModel.searchArticles(query: searchText, source: selectedSource)
                         }
                     }
-                    SourceButton(title: "C705 Articles", isSelected: selectedSource == "C705 Articles") {
+                    PillButton(title: "C705 Articles", isSelected: selectedSource == "C705 Articles") {
                         selectedSource = "C705 Articles"
                         Task {
                             await viewModel.searchArticles(query: searchText, source: selectedSource)
                         }
                     }
-                    SourceButton(title: "Latest News", isSelected: selectedSource == "Latest News") {
+                    PillButton(title: "Latest News", isSelected: selectedSource == "Latest News") {
                         selectedSource = "Latest News"
                         Task {
                             await viewModel.searchArticles(query: searchText, source: selectedSource)
@@ -113,27 +113,6 @@ struct ArticlesView: View {
             article.author.lowercased().contains(searchLower) ||
             article.city?.lowercased().contains(searchLower) ?? false
         }
-    }
-}
-
-struct SourceButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(.systemGray6))
-                .cornerRadius(20)
-                .scaleEffect(isSelected ? 1.0 : 0.95)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .animation(AppAnimations.quickSpring, value: isSelected)
     }
 }
 
