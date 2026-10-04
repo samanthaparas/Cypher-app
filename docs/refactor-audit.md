@@ -59,10 +59,10 @@ All three main copies use the same font, padding, 20pt corner radius, and select
 **Fix:** one `PillButton` in `Views/PillButton.swift`, using `Theme` colors. Replace or wrap the copies.
 **Effort:** small. **Risk:** low.
 
-- [ ] `PillButton.swift` created
-- [ ] `SubTabButton` migrated
-- [ ] `SourceButton` migrated
-- [ ] `CityChip` migrated
+- [x] `PillButton.swift` created (PR #7)
+- [x] `SubTabButton` migrated (PR #7)
+- [x] `SourceButton` migrated (PR #7)
+- [x] `CityChip` migrated (PR #7)
 - [ ] `FilterChip` evaluated (may differ intentionally)
 - [ ] Profile `TabButton` evaluated (it is an underline tab, not a pill)
 
@@ -73,7 +73,7 @@ The pattern "padding + background + rounded corners + shadow" is rebuilt by hand
 **Fix:** a `ViewModifier` plus `.themeCard()` shortcut in `Views/CardStyle.swift` (padding, `Theme.card`, `Theme.cardRadius`, subtle `Theme.cardBorder` outline). This is the mockup's card.
 **Effort:** small to create, medium to adopt everywhere. **Risk:** low.
 
-- [ ] `CardStyle.swift` created
+- [x] `CardStyle.swift` created (PR #7; no adopters yet)
 - [ ] `ArticleCardView` migrated (first adopter)
 - [ ] Remaining card-like views migrated screen by screen
 
