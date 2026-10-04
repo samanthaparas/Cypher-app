@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Home Tab
@@ -18,29 +18,39 @@ struct MainTabView: View {
                     Label("Home", systemImage: "house")
                 }
                 .tag(0)
-            
-            // Search Tab
+
+            // Discover Tab
             UniversalSearchView()
                 .tabItem {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Label("Discover", systemImage: "magnifyingglass")
                 }
                 .tag(1)
-            
-            // Cypher Tab
+
+            // Arena Tab
             FreestyleArenaView()
                 .tabItem {
-                    Label("Cypher", systemImage: "mic.fill")
+                    Label("Arena", systemImage: "mic.fill")
                 }
                 .tag(2)
-            
+
             // Beats Tab
             BeatsView()
                 .tabItem {
                     Label("Beats", systemImage: "music.note")
                 }
                 .tag(3)
+
+            // Profile Tab
+            ProfileView(showsBackButton: false)
+                .tabItem {
+                    Label("Profile", systemImage: "person.fill")
+                }
+                .tag(4)
         }
-        .accentColor(.blue)
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            CypherTabBar(selectedTab: $selectedTab)
+        }
     }
 }
 
