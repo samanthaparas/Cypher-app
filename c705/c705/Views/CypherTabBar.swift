@@ -11,7 +11,7 @@ import SwiftUI
 struct CypherTabBar: View {
     @Binding var selectedTab: Int
 
-        private let items: [TabItem] = [
+    private let items: [TabItem] = [
         TabItem(tag: 0, title: "Home",     icon: "house.fill"),
         TabItem(tag: 1, title: "Discover", icon: "magnifyingglass"),
         TabItem(tag: 2, title: "Arena",    icon: "mic.fill", isRaised: true),
