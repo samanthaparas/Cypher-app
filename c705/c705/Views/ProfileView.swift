@@ -29,8 +29,12 @@ struct ProfileView: View {
     @State private var isLoadingCyphers = false
     @State private var showCypherPage = false
     
+    // Hidden when the profile is a root tab, where dismiss() has nothing to close
+    let showsBackButton: Bool
+
     // Initialize selectedTab based on user role
-    init() {
+    init(showsBackButton: Bool = true) {
+        self.showsBackButton = showsBackButton
         // We'll set this in onAppear since we need access to authService
         _selectedTab = State(initialValue: "Articles")
     }
@@ -212,12 +216,14 @@ struct ProfileView: View {
             .navigationTitle(displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.black)
+                if showsBackButton {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.black)
+                        }
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
