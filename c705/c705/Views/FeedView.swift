@@ -27,7 +27,7 @@ struct FeedView: View {
                 // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     TextField(getSearchPlaceholder(), text: $searchText)
                         .textFieldStyle(.plain)
                         .onSubmit {
@@ -36,7 +36,7 @@ struct FeedView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(Theme.card)
                 .cornerRadius(10)
                 
                 // Profile Button
@@ -45,12 +45,12 @@ struct FeedView: View {
                 }) {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundColor(.primary)
+                        .foregroundColor(Theme.textPrimary)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(.systemBackground))
+            .background(Theme.background)
             
             // Tab Navigation
             ScrollView(.horizontal, showsIndicators: false) {
@@ -62,11 +62,11 @@ struct FeedView: View {
                             VStack(spacing: 4) {
                                 Text(tab)
                                     .font(.system(size: 16, weight: selectedTab == tab ? .bold : .regular))
-                                    .foregroundColor(selectedTab == tab ? .primary : .secondary)
+                                    .foregroundColor(selectedTab == tab ? Theme.textPrimary : Theme.textSecondary)
                                 
                                 if selectedTab == tab {
                                     Rectangle()
-                                        .fill(Color.primary)
+                                        .fill(Theme.accent)
                                         .frame(height: 2)
                                 }
                             }
@@ -76,7 +76,7 @@ struct FeedView: View {
                 .padding(.horizontal, 16)
             }
             .padding(.vertical, 8)
-            .background(Color(.systemBackground))
+            .background(Theme.background)
             
             // Tab Content
             Group {
@@ -107,14 +107,16 @@ struct FeedView: View {
                         .font(.system(size: 20, weight: .medium))
                         .foregroundColor(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.blue)
+                        .background(Theme.accent)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(color: Theme.accent.opacity(0.5), radius: 10, x: 0, y: 4)
                 }
                 .padding(.trailing, 20)
                 .padding(.bottom, 20)
             }
-        }
+                }
+        .background(Theme.background.ignoresSafeArea())
+        .environment(\.colorScheme, .dark)
         .task {
             if viewModel.feedItems.isEmpty {
                 await viewModel.loadFeed()
