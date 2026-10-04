@@ -41,7 +41,7 @@ struct MainTabView: View {
                 .tag(3)
 
             // Profile Tab
-            ProfileView()
+            ProfileView(showsBackButton: false)
                 .tabItem {
                     Label("Profile", systemImage: "person.fill")
                 }
