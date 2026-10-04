@@ -23,7 +23,7 @@ struct TrendingView: View {
             // Sub-navigation (pill buttons style)
             HStack(spacing: 16) {
                 ForEach(subTabs, id: \.self) { tab in
-                    SubTabButton(
+                    PillButton(
                         title: tab,
                         isSelected: selectedSubTab == tab,
                         action: {
@@ -57,27 +57,6 @@ struct TrendingView: View {
             }
             .animation(AppAnimations.smoothSpring, value: selectedSubTab)
         }
-    }
-}
-
-struct SubTabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Theme.accent : Theme.card)
-                .cornerRadius(20)
-                .scaleEffect(isSelected ? 1.0 : 0.95)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .animation(AppAnimations.quickSpring, value: isSelected)
     }
 }
 

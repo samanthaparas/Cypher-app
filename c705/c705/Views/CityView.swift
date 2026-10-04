@@ -30,8 +30,8 @@ struct CityView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(majorCities, id: \.self) { city in
-                            CityChip(
-                                city: city,
+                            PillButton(
+                                title: city,
                                 isSelected: selectedCity == city,
                                 action: {
                                     selectedCity = city
@@ -110,24 +110,6 @@ struct CityView: View {
         } else if let city = selectedCity {
             // Load artists for selected city
             await viewModel.loadArtistsForCity(city)
-        }
-    }
-}
-
-struct CityChip: View {
-    let city: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(city)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(.systemGray6))
-                .cornerRadius(20)
         }
     }
 }
