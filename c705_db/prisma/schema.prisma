@@ -45,6 +45,8 @@ model User {
   beatReports   BeatReport[]
   subscription  Subscription?
   payouts       ProducerPayout[]
+  engineerProfile EngineerProfile?
+  bookingsAsArtist Booking[]        @relation("BookingsAsArtist")
 }
 
 model ArtistProfile {
@@ -343,6 +345,50 @@ model ProducerPayout {
   @@index([producerId])
   @@index([status])
   @@index([createdAt])
+}
+
+// Engineer booking (like booking a barber)
+model EngineerProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  bio         String?
+  studioName  String?
+  city        String?
+  avatarUrl   String?
+  hourlyRate  Int?      // in cents, same convention as Beat.price
+  createdAt   DateTime  @default(now())
+  bookings    Booking[]
+
+  @@index([city])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+model Booking {
+  id            String          @id @default(uuid())
+  artistId      String          // who's requesting the session
+  artist        User            @relation("BookingsAsArtist", fields: [artistId], references: [id], onDelete: Cascade)
+  engineerId    String          // links to the EngineerProfile
+  engineer      EngineerProfile @relation(fields: [engineerId], references: [id], onDelete: Cascade)
+  startTime     DateTime
+  endTime       DateTime
+  status        BookingStatus   @default(PENDING)
+  rate          Int?            // in cents, snapshot of hourlyRate at booking time
+  notes         String?
+  createdAt     DateTime        @default(now())
+  respondedAt   DateTime?
+
+  @@index([artistId])
+  @@index([engineerId])
+  @@index([status])
+  @@index([startTime])
 }
 
 // Journalist invite codes - Only admins can create these

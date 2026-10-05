@@ -19,9 +19,10 @@ import { JournalistInvitesModule } from './journalist-invites/journalist-invites
 import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health/health.controller';
 import { SearchModule } from './search/search.module';
+import { BookingModule } from './booking/booking.module';
 
 @Module({
-  imports: [AuthModule, S3Module, TracksModule, ArticlesModule, FeedModule, CommentsModule, LikesModule, ArtistsModule, CyphersModule, BeatsModule, SubscriptionsModule, PayoutsModule, NewsModule, JournalistInvitesModule, AdminModule, SearchModule],
+  imports: [AuthModule, S3Module, TracksModule, ArticlesModule, FeedModule, CommentsModule, LikesModule, ArtistsModule, CyphersModule, BeatsModule, SubscriptionsModule, PayoutsModule, NewsModule, JournalistInvitesModule, AdminModule, SearchModule, BookingModule],
   controllers: [AppController, HealthController],
   providers: [AppService, PrismaService],
 })

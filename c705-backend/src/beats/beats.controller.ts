@@ -58,8 +58,8 @@ export class BeatsController {
   async getBeats(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('bpm', new DefaultValuePipe(0), ParseIntPipe) bpm: number,
     @Query('genre') genre?: string,
-    @Query('bpm', new DefaultValuePipe(0), ParseIntPipe) bpm?: number,
     @Query('mood') mood?: string,
   ) {
     return this.beatsService.getBeats(
@@ -79,7 +79,7 @@ export class BeatsController {
     @Param('id') beatId: string,
     @CurrentUser() user?: any,
   ) {
-    return this.beatsService.getBeatById(beatId, user?.userId);
+    return this.beatsService.getBeatById(beatId, user?.id);
   }
 
   /**
@@ -101,7 +101,7 @@ export class BeatsController {
     @CurrentUser() user: any,
     @Body() purchaseDto: PurchaseBeatDto,
   ) {
-    return this.beatsService.purchaseBeat(beatId, user.userId, purchaseDto);
+    return this.beatsService.purchaseBeat(beatId, user.id, purchaseDto);
   }
 
   /**
@@ -113,7 +113,7 @@ export class BeatsController {
     @Param('id') beatId: string,
     @CurrentUser() user: any,
   ) {
-    const url = await this.beatsService.getFullBeatUrl(beatId, user.userId);
+    const url = await this.beatsService.getFullBeatUrl(beatId, user.id);
     return { fullUrl: url };
   }
 
@@ -127,7 +127,7 @@ export class BeatsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    return this.beatsService.getPurchasedBeats(user.userId, page, limit);
+    return this.beatsService.getPurchasedBeats(user.id, page, limit);
   }
 
   /**
@@ -140,7 +140,7 @@ export class BeatsController {
     @CurrentUser() user: any,
     @Body() reportDto: ReportBeatDto,
   ) {
-    return this.beatsService.reportBeat(beatId, user.userId, reportDto);
+    return this.beatsService.reportBeat(beatId, user.id, reportDto);
   }
 }
 

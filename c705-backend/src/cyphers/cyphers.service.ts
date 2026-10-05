@@ -118,7 +118,7 @@ export class CyphersService {
     }
 
     // Check if user has already submitted
-    let userEntry = null;
+    let userEntry: any = null;
     if (userId) {
       userEntry = await this.prisma.cypherEntry.findUnique({
         where: {

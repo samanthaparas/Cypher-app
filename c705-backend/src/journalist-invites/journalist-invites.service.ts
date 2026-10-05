@@ -149,12 +149,10 @@ export class JournalistInvitesService {
       throw new ForbiddenException('Only admins can view invite codes');
     }
 
+    // Note: createdBy/usedBy are plain string columns, not relations,
+    // so there's nothing to include here - just return the IDs as-is.
     const invites = await this.prisma.journalistInvite.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        // We can't include createdBy user relation without adding it to schema
-        // For now, just return the createdBy ID
-      },
     });
 
     return invites;

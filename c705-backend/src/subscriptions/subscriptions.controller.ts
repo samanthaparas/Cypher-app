@@ -16,7 +16,7 @@ export class SubscriptionsController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMySubscription(@CurrentUser() user: any) {
-    return this.subscriptionsService.getSubscription(user.userId);
+    return this.subscriptionsService.getSubscription(user.id);
   }
 
   /**
@@ -35,7 +35,7 @@ export class SubscriptionsController {
     },
   ) {
     return this.subscriptionsService.createOrUpdateSubscription(
-      user.userId,
+      user.id,
       body.tier,
       body.productId,
       body.receipt,
@@ -49,7 +49,7 @@ export class SubscriptionsController {
   @Post('cancel')
   @UseGuards(JwtAuthGuard)
   async cancel(@CurrentUser() user: any) {
-    return this.subscriptionsService.cancelSubscription(user.userId);
+    return this.subscriptionsService.cancelSubscription(user.id);
   }
 
   /**

@@ -30,14 +30,14 @@ Create a `.env` file in `c705-backend/` directory:
 
 ```env
 # Database
-DATABASE_URL=postgresql://ace:CHASE2ave@localhost:5432/c705_db
+DATABASE_URL=postgresql://your-user:your-password@localhost:5432/c705_db
 
 # Server
 PORT=3000
 
 # AWS S3 Configuration
-AWS_ACCESS_KEY_ID=AKIASDLSQCLN3GHDY65Z
-AWS_SECRET_ACCESS_KEY=8018W9B7k2wbWkISIAD87SJxMB8E
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-2
 AWS_S3_BUCKET_NAME=c705-media
 ```

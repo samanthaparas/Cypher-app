@@ -18,7 +18,7 @@
 - **Status**: ✅ **CONNECTED**
 - **PostgreSQL**: Running and accepting connections on port 5432
 - **Database**: c705_db
-- **Connection String**: `postgresql://ace:CHASE2ave@localhost:5432/c705_db`
+- **Connection String**: `postgresql://your-user:your-password@localhost:5432/c705_db`
 - **Test Signup**: ✅ Successfully created test user (database write working)
 
 ### 4. API Endpoints
