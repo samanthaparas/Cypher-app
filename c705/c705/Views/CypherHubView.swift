@@ -121,8 +121,8 @@ struct CypherHubView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
-                } else {
-                    // Placeholder while loading
+                } else if viewModel.isLoading {
+                    // Placeholder only while a request is actually in flight
                     HStack {
                         Text("Loading top cypher...")
                             .font(.system(size: 14))
@@ -133,8 +133,20 @@ struct CypherHubView: View {
                     .background(Color(red: 0.98, green: 0.96, blue: 0.92))
                     .cornerRadius(12)
                     .padding(.horizontal)
+                } else {
+                    // Loaded, but nothing to announce yet
+                    HStack {
+                        Text("No top cypher yet. Start one!")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color(red: 0.98, green: 0.96, blue: 0.92))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
                 }
-                
+
                 if viewModel.isLoading && viewModel.topCyphers.isEmpty {
                     ProgressView("Loading cyphers...")
                         .frame(maxWidth: .infinity)
