@@ -19,7 +19,7 @@ struct UniversalSearchView: View {
             VStack(spacing: 0) {
                 // Title
                 HStack {
-                    Text("Search")
+                    Text("Discover")
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(.primary)
                     Spacer()
@@ -76,7 +76,7 @@ struct UniversalSearchView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 48))
                             .foregroundColor(.gray.opacity(0.5))
-                        Text("Search")
+                        Text("Find artists, beats, and cyphers")
                             .font(.system(size: 16))
                             .foregroundColor(.gray)
                     }

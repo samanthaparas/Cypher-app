@@ -81,7 +81,7 @@ struct TrendingBeatsView: View {
                         Image(systemName: "music.note.list")
                             .font(.system(size: 48))
                             .foregroundColor(.gray)
-                        Text("No trending beats found")
+                        Text("No beats yet. Upload one!")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.gray)
                     }
@@ -178,7 +178,7 @@ struct TrendingCyphersView: View {
                         Image(systemName: "mic.fill")
                             .font(.system(size: 48))
                             .foregroundColor(.gray)
-                        Text("No trending cyphers found")
+                        Text("No cyphers yet. Start one!")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.gray)
                     }
