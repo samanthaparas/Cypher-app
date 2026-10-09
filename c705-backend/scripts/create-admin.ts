@@ -3,18 +3,27 @@ import { PrismaClient } from '../../c705_db/generated/prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL must be set in the environment (.env)');
+}
+
 const prisma = new PrismaClient({
   adapter: new PrismaPg(
     new Pool({
-      connectionString: process.env.DATABASE_URL || 'postgresql://ace:CHASE2ave@localhost:5432/c705_db',
+      connectionString: process.env.DATABASE_URL,
     })
   ),
 });
 
 async function createAdmin() {
-  const email = 'averyalh7@yahoo.com';
-  const password = 'ADMIN'; // Change this to your desired password
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
   const role = 'ADMIN';
+
+  if (!email || !password) {
+    console.error('❌ Set ADMIN_EMAIL and ADMIN_PASSWORD in the environment before running this script.');
+    process.exit(1);
+  }
 
   try {
     // Check if admin already exists
@@ -61,8 +70,8 @@ async function createAdmin() {
     console.log('🆔 ID:', admin.id);
     console.log('\n⚠️  IMPORTANT: Save this password securely!');
     console.log('⚠️  You can now login to the admin panel with:');
-    console.log('   Email: averyalh7@yahoo.com');
-    console.log('   Password: ADMIN');
+    console.log('   Email:', email);
+    console.log('   Password:', password);
   } catch (error: any) {
     console.error('❌ Error creating admin user:', error.message);
     if (error.code === 'P2002') {

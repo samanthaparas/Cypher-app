@@ -10,11 +10,15 @@ import { RolesGuard } from './guards/roles.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { JournalistInvitesModule } from '../journalist-invites/journalist-invites.module';
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in the environment (.env)');
+}
+
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '7d' }, // Token expires in 7 days
     }),
     JournalistInvitesModule,

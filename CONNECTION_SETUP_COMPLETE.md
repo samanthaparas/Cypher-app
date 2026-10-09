@@ -113,7 +113,7 @@ Create `c705-backend/.env`:
 
 ```env
 # Database
-DATABASE_URL=postgresql://ace:CHASE2ave@localhost:5432/c705_db
+DATABASE_URL=postgresql://your-user:your-password@localhost:5432/c705_db
 
 # Server
 PORT=3000

@@ -3,12 +3,16 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set in the environment (.env)");
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env.DATABASE_URL || "postgresql://ace:CHASE2ave@localhost:5432/c705_db",
+    url: process.env.DATABASE_URL,
   },
 });

@@ -7,8 +7,8 @@ This module provides integration with AWS S3 for file storage and management.
 The S3 service is configured via environment variables in `.env`:
 
 ```env
-AWS_ACCESS_KEY_ID=AKIASDLSQCLN3GHDY65Z
-AWS_SECRET_ACCESS_KEY=8018W9B7k2wbWkISIAD87SJxMB8E
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-2
 AWS_S3_BUCKET_NAME=c705-media
 ```
