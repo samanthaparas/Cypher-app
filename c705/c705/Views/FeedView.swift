@@ -98,22 +98,22 @@ struct FeedView: View {
                         .environmentObject(authService)
                 }
             }
-            .overlay(alignment: .bottomTrailing) {
-                // Floating Action Button (FAB)
-                Button(action: {
-                    // TODO: Implement recording functionality
-                }) {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Theme.accent)
-                        .clipShape(Circle())
-                        .shadow(color: Theme.accent.opacity(0.5), radius: 10, x: 0, y: 4)
-                }
-                .padding(.trailing, 20)
-                .padding(.bottom, 20)
-            }
+            // .overlay(alignment: .bottomTrailing) {
+            //     // Floating Action Button (FAB)
+            //     Button(action: {
+            //         // TODO: Implement recording functionality
+            //     }) {
+            //         Image(systemName: "mic.fill")
+            //             .font(.system(size: 20, weight: .medium))
+            //             .foregroundColor(.white)
+            //             .frame(width: 56, height: 56)
+            //             .background(Theme.accent)
+            //             .clipShape(Circle())
+            //             .shadow(color: Theme.accent.opacity(0.5), radius: 10, x: 0, y: 4)
+            //     }
+            //     .padding(.trailing, 20)
+            //     .padding(.bottom, 20)
+            // }
                 }
         .background(Theme.background.ignoresSafeArea())
         .environment(\.colorScheme, .dark)
