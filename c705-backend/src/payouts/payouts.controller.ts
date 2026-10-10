@@ -13,7 +13,7 @@ export class PayoutsController {
   @Get('earnings')
   @UseGuards(JwtAuthGuard)
   async getEarnings(@CurrentUser() user: any) {
-    return this.payoutsService.getProducerEarnings(user.userId);
+    return this.payoutsService.getProducerEarnings(user.id);
   }
 
   /**
@@ -22,7 +22,7 @@ export class PayoutsController {
   @Post('request')
   @UseGuards(JwtAuthGuard)
   async requestPayout(@CurrentUser() user: any) {
-    return this.payoutsService.requestPayout(user.userId);
+    return this.payoutsService.requestPayout(user.id);
   }
 
   /**
@@ -31,7 +31,7 @@ export class PayoutsController {
   @Get('history')
   @UseGuards(JwtAuthGuard)
   async getHistory(@CurrentUser() user: any) {
-    return this.payoutsService.getPayoutHistory(user.userId);
+    return this.payoutsService.getPayoutHistory(user.id);
   }
 
   /**

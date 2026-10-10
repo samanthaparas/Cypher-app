@@ -8,13 +8,22 @@ export class S3Service {
   private bucketName: string;
 
   constructor() {
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error(
+        'AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in the environment (.env)',
+      );
+    }
+
     this.bucketName = process.env.AWS_S3_BUCKET_NAME || 'c705-media';
-    
+
     this.s3Client = new S3Client({
       region: process.env.AWS_REGION || 'us-east-2',
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AKIASDLSQCLN3GHDY65Z',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '8018W9B7k2wbWkISIAD87SJxMB8E',
+        accessKeyId,
+        secretAccessKey,
       },
     });
   }
