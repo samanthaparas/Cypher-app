@@ -1706,7 +1706,8 @@ struct DeleteAccountView: View {
     @Environment(\.dismiss) var sheetDismiss
     @State private var confirmText = ""
     @State private var isDeleting = false
-    
+    @State private var deleteError: String?
+
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
@@ -1714,12 +1715,12 @@ struct DeleteAccountView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 50))
                         .foregroundColor(.red)
-                    
+
                     Text("Delete Account")
                         .font(.title2)
                         .bold()
-                    
-                    Text("This action cannot be undone. All your data will be permanently deleted.")
+
+                    Text("This action cannot be undone. Your profile, tracks, beats, entries, votes and comments will be permanently deleted. Any cypher you host will be deleted too, including other artists' entries in it.")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -1738,26 +1739,42 @@ struct DeleteAccountView: View {
                 }
                 .padding(.horizontal)
                 
+                if let deleteError {
+                    Text(deleteError)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+
                 Button(action: {
                     if confirmText == "DELETE" {
                         isDeleting = true
-                        // TODO: Call API to delete account
-                        authService.logout()
-                        sheetDismiss()
-                        dismiss()
+                        deleteError = nil
+                        Task {
+                            do {
+                                // Delete on the server first; only sign out if it worked.
+                                try await authService.deleteAccount()
+                                sheetDismiss()
+                                dismiss()
+                            } catch {
+                                deleteError = error.localizedDescription
+                                isDeleting = false
+                            }
+                        }
                     }
                 }) {
-                    Text("Delete My Account")
+                    Text(isDeleting ? "Deleting..." : "Delete My Account")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(confirmText == "DELETE" ? Color.red : Color.gray)
+                        .background(confirmText == "DELETE" && !isDeleting ? Color.red : Color.gray)
                         .cornerRadius(10)
                 }
                 .disabled(confirmText != "DELETE" || isDeleting)
                 .padding(.horizontal)
-                
+
                 Spacer()
             }
             .navigationTitle("Delete Account")

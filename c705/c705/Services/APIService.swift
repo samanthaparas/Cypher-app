@@ -1138,6 +1138,14 @@ class APIService {
         return try await performRequest(request, responseType: AuthResponse.self)
     }
 
+    /// Permanently deletes the signed-in user's account and data (App Store Guideline 5.1.1(v)).
+    func deleteAccount() async throws -> DeleteAccountResponse {
+        guard let request = createRequest(endpoint: "/auth/account", method: "DELETE") else {
+            throw APIError.invalidURL
+        }
+        return try await performRequest(request, responseType: DeleteAccountResponse.self)
+    }
+
     // MARK: - Articles
     
     func getArticles(page: Int = 1, limit: Int = 20) async throws -> ArticlesResponse {
@@ -1206,6 +1214,10 @@ struct LikeRequest: Codable {
 struct LikeResponse: Codable {
     let message: String
     let trackId: String
+}
+
+struct DeleteAccountResponse: Codable {
+    let message: String
 }
 
 struct OAuthSignInRequest: Codable {
