@@ -349,4 +349,52 @@ export class AuthService {
       isNewUser: false,
     };
   }
+
+  async deleteAccount(userId: string): Promise<{ message: string }> {
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Remember which entries this user voted on. Their votes will
+      //    cascade away when the user is deleted, but each entry stores
+      //    a precomputed averageScore and voteCount that would go stale.
+      const votedEntries = await tx.cypherVote.findMany({
+        where: { userId },
+        select: { entryId: true },
+      });
+      const entryIds = votedEntries.map((vote) => vote.entryId);
+
+      // 2. Delete the records that do NOT cascade from User.
+      //    Tracks point at ArtistProfile, so they go first.
+      const artistProfile = await tx.artistProfile.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (artistProfile) {
+        await tx.track.deleteMany({ where: { artistId: artistProfile.id } });
+        await tx.artistProfile.delete({ where: { id: artistProfile.id } });
+      }
+      await tx.engineerProfile.deleteMany({ where: { userId } });
+
+      // 3. Delete the user. Comments, follows, entries, votes, reports,
+      //    beats, hosted cyphers and the rest cascade automatically.
+      await tx.user.delete({ where: { id: userId } });
+
+      // 4. Recompute the stored score for each entry that lost a vote.
+      //    updateMany is used so an entry already removed by a cascade
+      //    (for example, in a cypher this user hosted) is skipped quietly.
+      for (const entryId of entryIds) {
+        const votes = await tx.cypherVote.findMany({
+          where: { entryId },
+          select: { score: true },
+        });
+        const totalScore = votes.reduce((sum, vote) => sum + vote.score, 0);
+        const averageScore = votes.length > 0 ? totalScore / votes.length : 0;
+
+        await tx.cypherEntry.updateMany({
+          where: { id: entryId },
+          data: { averageScore, voteCount: votes.length },
+        });
+      }
+    });
+
+    return { message: 'Account deleted' };
+  }
 }
