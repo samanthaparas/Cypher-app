@@ -340,6 +340,13 @@ class AuthService: ObservableObject {
         }
     }
     
+    /// Deletes the account on the server first. Only signs out if that succeeds,
+    /// so a failed request never leaves the user believing their data is gone.
+    func deleteAccount() async throws {
+        _ = try await apiService.deleteAccount()
+        logout()
+    }
+
     func logout() {
         // Clear API token
         apiService.clearAuthToken()
