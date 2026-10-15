@@ -32,6 +32,9 @@ struct LoginView: View {
                     .environmentObject(authService)
             } else {
                 loginContent
+                    // The photo and overlay are dark, so use light status bar text.
+                    // Black time/battery was unreadable on top of his dark hair.
+                    .preferredColorScheme(.dark)
                     .onAppear {
                         // Set the shared AuthService in the view model
                         viewModel.authService = authService
