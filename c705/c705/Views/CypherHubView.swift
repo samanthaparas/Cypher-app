@@ -582,12 +582,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         }
                     }
                     
-                    // Method 2: Use the location property to search for nearby city info
-                    let location = mapItem.location
-                    // Create a new search centered on this location to find city
+                    // Method 2: Use the item's coordinate to search for nearby city info.
+                    // (mapItem.location is iOS 26+; placemark.coordinate works back to iOS 17.)
+                    let itemCoordinate = mapItem.placemark.coordinate
+                    // Create a new search centered on this coordinate to find city
                     let cityRequest = MKLocalSearch.Request()
                     cityRequest.region = MKCoordinateRegion(
-                        center: location.coordinate,
+                        center: itemCoordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
                     )
                     cityRequest.naturalLanguageQuery = "city"
@@ -638,11 +639,11 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         }
                     }
                     
-                    // Use location to search for city
-                    let location = mapItem.location
+                    // Use the item's coordinate to search for city (iOS 17-safe, see above)
+                    let itemCoordinate = mapItem.placemark.coordinate
                     let cityRequest = MKLocalSearch.Request()
                     cityRequest.region = MKCoordinateRegion(
-                        center: location.coordinate,
+                        center: itemCoordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
                     )
                     cityRequest.naturalLanguageQuery = "city"
