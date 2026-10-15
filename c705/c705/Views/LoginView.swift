@@ -394,7 +394,7 @@ struct EmailLoginView: View {
                         VStack(spacing: 16) {
                             // Username field (only for signup)
                             if viewModel.isSignupMode {
-                                TextField("Username", text: $viewModel.username)
+                                TextField("Username", text: $viewModel.username, prompt: Text("Username").foregroundColor(.gray))
                                     .focused($focusedField, equals: .username)
                                     .padding()
                                     .background(Color.white)
@@ -408,7 +408,7 @@ struct EmailLoginView: View {
                                     }
                             }
                             
-                            TextField("Email", text: $viewModel.email)
+                            TextField("Email", text: $viewModel.email, prompt: Text("Email").foregroundColor(.gray))
                                 .focused($focusedField, equals: .email)
                                 .padding()
                                 .background(Color.white)
@@ -421,7 +421,7 @@ struct EmailLoginView: View {
                                     focusedField = .password
                                 }
                             
-                            SecureField("Password", text: $viewModel.password)
+                            SecureField("Password", text: $viewModel.password, prompt: Text("Password").foregroundColor(.gray))
                                 .focused($focusedField, equals: .password)
                                 .padding()
                                 .background(Color.white)
@@ -441,7 +441,7 @@ struct EmailLoginView: View {
                                 }
                             
                             if viewModel.isSignupMode {
-                                SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                                SecureField("Confirm Password", text: $viewModel.confirmPassword, prompt: Text("Confirm Password").foregroundColor(.gray))
                                     .focused($focusedField, equals: .confirmPassword)
                                     .padding()
                                     .background(Color.white)
@@ -474,7 +474,7 @@ struct EmailLoginView: View {
                                             }
                                         }
                                     } else {
-                                        TextField("Journalist Access Code", text: $journalistAccessCode)
+                                        TextField("Journalist Access Code", text: $journalistAccessCode, prompt: Text("Journalist Access Code").foregroundColor(.gray))
                                             .focused($focusedField, equals: .accessCode)
                                             .padding()
                                             .background(Color.white)
