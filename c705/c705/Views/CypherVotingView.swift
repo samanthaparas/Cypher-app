@@ -4,20 +4,44 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The sheet where someone scores one cypher entry. They must listen
+//  to the whole entry first, then rate it from 1 to 5 on Bars, Flow and
+//  Creativity, and submit.
+//
 
 import SwiftUI
 
 struct CypherVotingView: View {
     let entry: CypherEntry
+    // Called when the vote is submitted. The three numbers are the scores.
     let onVote: (Int, Int, Int) -> Void
     @Environment(\.dismiss) var dismiss
     @State private var bars: Double = 3.0
     @State private var flow: Double = 3.0
     @State private var creativity: Double = 3.0
+    // Stays false until the audio has played to the end. The Submit button
+    // is disabled until this becomes true.
     @State private var hasPlayedFullEntry = false
-    @State private var isPlaying = false
-    @State private var playbackProgress: Double = 0
     @State private var isSubmitting = false
+
+    // The app's shared audio player (see AudioPlayerService.swift).
+    // @ObservedObject redraws this screen whenever the player changes.
+    @ObservedObject private var player = AudioPlayerService.shared
+    @State private var audioError: String?
+
+    // These two are worked out from the player each time, so they cannot get
+    // out of sync with what is really playing.
+    private var isPlaying: Bool {
+        player.isPlaying && player.currentURL == entry.audioUrl
+    }
+    private var playbackProgress: Double {
+        // Once the whole entry has been heard (and it is not replaying), keep the bar full.
+        if hasPlayedFullEntry && !isPlaying { return 1.0 }
+        guard player.currentURL == entry.audioUrl, player.duration > 0 else {
+            return hasPlayedFullEntry ? 1.0 : 0
+        }
+        return player.currentTime / player.duration
+    }
     
     var body: some View {
         NavigationView {
@@ -37,15 +61,18 @@ struct CypherVotingView: View {
                     }
                     .padding()
                     
-                    // Audio Player
+                    // Audio Player: plays the real entry and shows how far along it is.
                     VStack(spacing: 12) {
                         HStack {
+                            // Play/pause. If loading fails, the message is saved
+                            // so the alert at the bottom of this view can show it.
                             Button(action: {
-                                // TODO: Implement audio playback
-                                isPlaying.toggle()
-                                if isPlaying {
-                                    // Start playback tracking
-                                    startPlaybackTracking()
+                                Task {
+                                    do {
+                                        try await player.togglePlayback(urlString: entry.audioUrl)
+                                    } catch {
+                                        audioError = error.localizedDescription
+                                    }
                                 }
                             }) {
                                 Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
@@ -84,7 +111,8 @@ struct CypherVotingView: View {
                     .cornerRadius(12)
                     .padding(.horizontal)
                     
-                    // Voting Sliders
+                    // Voting Sliders: three 1 to 5 scores. Each card below follows the
+                    // same pattern: a label, the current number, and a slider.
                     VStack(spacing: 20) {
                         Text("Rate this entry")
                             .font(.headline)
@@ -179,7 +207,8 @@ struct CypherVotingView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Submit Vote Button
+                    // Submit Vote Button. It stays gray and disabled until the
+                    // entry has been played all the way through.
                     Button(action: {
                         isSubmitting = true
                         onVote(Int(bars), Int(flow), Int(creativity))
@@ -218,24 +247,32 @@ struct CypherVotingView: View {
                     }
                 }
             }
-        }
-    }
-    
-    private func startPlaybackTracking() {
-        // TODO: Implement actual audio playback tracking
-        // For now, simulate playback completion after 3 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            hasPlayedFullEntry = true
-            isPlaying = false
-            playbackProgress = 1.0
-        }
-        
-        // Simulate progress
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-            if playbackProgress < 1.0 {
-                playbackProgress += 0.033 // Complete in ~3 seconds
-            } else {
-                timer.invalidate()
+            // When the sheet opens: stop anything already playing, then check whether this entry
+            // was already played all the way through earlier (on the entries list or in this sheet).
+            // An entry that was stopped early does not count.
+            .onAppear {
+                player.stop()
+                hasPlayedFullEntry = player.finishedURLs.contains(entry.audioUrl)
+            }
+            // The player records an entry here when it plays to the end. If it is this entry,
+            // unlock the Submit button.
+            .onChange(of: player.finishedURLs) { _, finished in
+                if finished.contains(entry.audioUrl) {
+                    hasPlayedFullEntry = true
+                }
+            }
+            // Stop the audio when the sheet closes so it does not keep playing.
+            .onDisappear {
+                player.stop()
+            }
+            // Pops up a message if the audio could not be loaded.
+            .alert("Couldn't play this entry", isPresented: Binding(
+                get: { audioError != nil },
+                set: { if !$0 { audioError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(audioError ?? "")
             }
         }
     }

@@ -4,6 +4,11 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The app's phone line to the backend server. Every request (login,
+//  feed, cyphers, beats, votes, uploads) is built and sent from here,
+//  so the rest of the app never deals with web addresses or raw
+//  network code.
+//
 
 import Foundation
 
@@ -13,6 +18,8 @@ import Foundation
     // Running on physical device
 #endif
 
+// Use APIService.shared from anywhere. Each function below is one question or action for the
+// server, such as login or getFeed.
 class APIService {
     static let shared = APIService()
     
@@ -20,6 +27,9 @@ class APIService {
     // Automatically detects simulator vs physical device
     // IMPORTANT: For Apple Sign In on physical devices, you MUST use HTTPS (e.g., ngrok)
     // Local IP addresses will timeout and fail on real devices
+    // The server address, chosen in order: a custom address saved in settings, then a
+    // production address saved in settings, then the default. This is how the Simulator can be
+    // pointed at a backend on your own Mac.
     private var baseURL: String {
         if let customURL = UserDefaults.standard.string(forKey: "customBackendURL"), !customURL.isEmpty {
             return customURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -29,12 +39,17 @@ class APIService {
             return productionURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         }
 
+        // The default address when nothing else is set.
         return "https://api.c705.online"
     }
     
+    // The login token. Once set, it is attached to every request so the server knows who is
+    // asking.
     private var authToken: String?
     
     // Custom URLSession configuration to suppress verbose network logging
+    // The network session used for requests, set to give up quickly instead of hanging. lazy
+    // means it is created the first time it is needed.
     private lazy var urlSession: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30.0
@@ -52,10 +67,12 @@ class APIService {
     }
     
     // Method to set custom backend URL (for physical devices)
+    // Saves a different server address, for example a test server while developing.
     func setCustomBackendURL(_ url: String) {
         UserDefaults.standard.set(url, forKey: "customBackendURL")
     }
     
+    // Remembering or forgetting the login token.
     // MARK: - Authentication
     
     func setAuthToken(_ token: String) {
@@ -66,6 +83,9 @@ class APIService {
         self.authToken = nil
     }
     
+    // Two shared helpers do the repeated work: createRequest builds a request with the address,
+    // headers and token, and performRequest sends it, checks the reply and turns the JSON into
+    // Swift objects.
     // MARK: - Request Helpers
     
     private func createRequest(endpoint: String, method: String = "GET", body: Data? = nil) -> URLRequest? {
@@ -89,6 +109,9 @@ class APIService {
         return request
     }
     
+    // Sends the request and waits for the reply without freezing the screen (async). If the
+    // server answers with an error, it reads the server's message and throws it so screens can
+    // show it.
     private func performRequest<T: Decodable>(_ request: URLRequest, responseType: T.Type) async throws -> T {
         do {
             // Reduced logging to minimize console noise
@@ -232,6 +255,7 @@ class APIService {
         }
     }
     
+    // Create an account or log in with email and password.
     // MARK: - Auth Endpoints
     
     func login(email: String, password: String) async throws -> AuthResponse {
@@ -309,6 +333,8 @@ class APIService {
         }
     }
     
+    // Sign in with Apple or Google. The server checks their proof of identity and returns the
+    // app's own token.
     // MARK: - OAuth Endpoints
     
     func signInWithApple(identityToken: String, email: String?, fullName: String?, role: String = "") async throws -> AuthResponse {
@@ -374,6 +400,7 @@ class APIService {
         return response
     }
     
+    // The Home feed of tracks and articles.
     // MARK: - Feed Endpoint
     
     func getFeed(page: Int = 1, limit: Int = 20) async throws -> FeedResponse {
@@ -384,6 +411,7 @@ class APIService {
         return try await performRequest(request, responseType: FeedResponse.self)
     }
     
+    // Like or unlike a track.
     // MARK: - Like Endpoints
     
     func likeTrack(trackId: String) async throws -> LikeResponse {
@@ -405,6 +433,7 @@ class APIService {
         return try await performRequest(request, responseType: LikeResponse.self)
     }
     
+    // Read and write comments on a track.
     // MARK: - Comment Endpoints
     
     func getTrackComments(trackId: String, page: Int = 1, limit: Int = 20) async throws -> CommentsResponse {
@@ -426,6 +455,7 @@ class APIService {
         return try await performRequest(request, responseType: Comment.self)
     }
     
+    // Artist lists, profiles and following.
     // MARK: - Artist Endpoints
     
     func getAllArtists(page: Int = 1, limit: Int = 20, search: String? = nil) async throws -> ArtistsListResponse {
@@ -481,6 +511,8 @@ class APIService {
         return try await performRequest(request, responseType: FollowersResponse.self)
     }
     
+    // Uploads a recorded track. Files go up as multipart form data, the same way a web form
+    // sends a file.
     // MARK: - Track Upload
     
     func uploadTrack(title: String, audioData: Data, fileName: String) async throws -> Track {
@@ -517,6 +549,8 @@ class APIService {
         return try await performRequest(request, responseType: Track.self)
     }
     
+    // Everything about cyphers: list them, open one, submit an entry, vote, report and see the
+    // leaderboard.
     // MARK: - Cyphers
     
     func getActiveCyphers(page: Int = 1, limit: Int = 20) async throws -> CypherResponse {
@@ -535,6 +569,8 @@ class APIService {
         return try await performRequest(request, responseType: CypherDetail.self)
     }
     
+    // Uploads a recorded entry to a cypher. The server stores the audio file and returns the
+    // new entry.
     func submitCypherEntry(cypherId: String, audioData: Data, fileName: String, title: String? = nil) async throws -> CypherEntry {
         guard let url = URL(string: "\(baseURL)/cyphers/\(cypherId)/submit") else {
             throw APIError.invalidURL
@@ -579,6 +615,7 @@ class APIService {
         return try await performRequest(request, responseType: CypherEntriesResponse.self)
     }
     
+    // Sends the three 1 to 5 scores for an entry and gets back its new average and vote count.
     func voteCypherEntry(entryId: String, bars: Int, flow: Int, creativity: Int) async throws -> VoteResponse {
         guard let url = URL(string: "\(baseURL)/cyphers/entries/\(entryId)/vote") else {
             throw APIError.invalidURL
@@ -625,6 +662,7 @@ class APIService {
         return try await performRequest(request, responseType: [LeaderboardEntry].self)
     }
     
+    // The Popular Cyphers list shown in the Arena.
     // MARK: - Top Cyphers
     
     func getTopCyphers(range: String = "week", limit: Int = 20) async throws -> [TopCypher] {
@@ -635,6 +673,7 @@ class APIService {
         return try await performRequest(request, responseType: [TopCypher].self)
     }
     
+    // Invite someone to a cypher, and see or answer invites you received.
     // MARK: - Cypher Invites
     
     func inviteArtistToCypher(cypherId: String, artistId: String) async throws {
@@ -656,6 +695,8 @@ class APIService {
         let _: [String: String] = try await performRequest(request, responseType: [String: String].self)
     }
     
+    // Returns an empty list instead of an error when invites cannot be loaded, so a problem
+    // here never breaks the whole screen.
     func getUserCypherInvites() async throws -> [CypherInvite] {
         guard let request = createRequest(endpoint: "/cyphers/users/invites") else {
             throw APIError.invalidURL
@@ -697,6 +738,7 @@ class APIService {
         let _: [String: String] = try await performRequest(request, responseType: [String: String].self)
     }
     
+    // Search for people by username, for example to invite them.
     // MARK: - User Search
     
     func searchUsersByUsername(_ username: String) async throws -> [SearchUser] {
@@ -768,6 +810,7 @@ class APIService {
         }
     }
     
+    // One search that looks for users, cities, cyphers and beats at once.
     // MARK: - Universal Search
     
     struct UniversalSearchResponse: Codable {
@@ -819,6 +862,8 @@ class APIService {
         }
     }
     
+    // Searches need at least 2 characters. If the request fails it returns empty results, so a
+    // broken search looks like "no results" instead of showing an error.
     func universalSearch(query: String) async throws -> UniversalSearchResponse {
         guard query.count >= 2 else {
             return UniversalSearchResponse(users: [], cities: [], cyphers: [], beats: [])
@@ -842,6 +887,7 @@ class APIService {
         }
     }
     
+    // Creates a new cypher.
     // MARK: - Create Cypher
     
     func createCypher(
@@ -850,7 +896,8 @@ class APIService {
         beatUrl: String?,
         cypherType: String,
         startDate: Date,
-        endDate: Date?
+        endDate: Date?,
+        visibility: String = "PUBLIC" // "PUBLIC" or "INVITE_ONLY"
     ) async throws -> Cypher {
         guard let url = URL(string: "\(baseURL)/cyphers") else {
             throw APIError.invalidURL
@@ -884,12 +931,16 @@ class APIService {
         if let endDate = endDate {
             body["endDate"] = formatter.string(from: endDate)
         }
-        
+
+        // Tells the server who can see this cypher. Only public cyphers appear in the Arena's Popular list.
+        body["visibility"] = visibility
+
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         return try await performRequest(request, responseType: Cypher.self)
     }
     
+    // Upload, browse, preview, buy and report beats.
     // MARK: - Beats API
     
     func uploadBeat(title: String, genre: String, bpm: Int, mood: String?, price: Int, audioData: Data, fileName: String) async throws -> Beat {
@@ -1041,6 +1092,7 @@ class APIService {
         let _: [String: String] = try await performRequest(request, responseType: [String: String].self)
     }
     
+    // Subscription plans (a later feature).
     // MARK: - Subscriptions
     
     func getSubscription() async throws -> SubscriptionResponse {
@@ -1091,6 +1143,7 @@ class APIService {
         return try await performRequest(request, responseType: SubscriptionResponse.self)
     }
     
+    // Producer earnings and payout requests (a later feature).
     // MARK: - Payouts (Producer)
     
     func getProducerEarnings() async throws -> ProducerEarningsResponse {
@@ -1122,6 +1175,7 @@ class APIService {
         return try await performRequest(request, responseType: PayoutHistoryResponse.self)
     }
     
+    // Changing the account type or username, and deleting the account.
     // MARK: - User Role Update
     
     func updateUserRole(_ role: String) async throws -> AuthResponse {
@@ -1146,6 +1200,7 @@ class APIService {
         return try await performRequest(request, responseType: DeleteAccountResponse.self)
     }
 
+    // Articles written by journalists.
     // MARK: - Articles
     
     func getArticles(page: Int = 1, limit: Int = 20) async throws -> ArticlesResponse {
@@ -1155,6 +1210,7 @@ class APIService {
         return try await performRequest(request, responseType: ArticlesResponse.self)
     }
     
+    // News stories the backend pulls in from outside news services.
     // MARK: - News (Hip-Hop News from External Sources)
     
     func getHipHopNews(query: String? = nil) async throws -> HipHopNewsResponse {
@@ -1170,6 +1226,7 @@ class APIService {
     }
 }
 
+// The kinds of errors a request can fail with, each with a readable message.
 // MARK: - API Errors
 
 enum APIError: Error {
@@ -1205,6 +1262,7 @@ enum APIError: Error {
     }
 }
 
+// Small request and reply shapes used only by the functions in this file.
 // MARK: - Additional Models
 
 struct LikeRequest: Codable {
