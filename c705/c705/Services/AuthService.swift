@@ -33,7 +33,10 @@ class AuthService: ObservableObject {
     
     // UserDefaults key to track if user has completed first authentication
     private let hasCompletedFirstAuthKey = "hasCompletedFirstAuth"
-    
+
+    // Keeps the token-rejected subscription alive for as long as this AuthService exists.
+    private var cancellables = Set<AnyCancellable>()
+
     // Always starts signed out, so the login screen shows first. Auto-login is attempted
     // afterwards.
     init() {
@@ -41,6 +44,17 @@ class AuthService: ObservableObject {
         // Auto-login will be handled after the login screen loads
         self.isAuthenticated = false
         self.currentUser = nil
+
+        // When the server rejects the saved token (for example it expired after 7 days), sign
+        // out so the login screen shows instead of screens that fail with errors.
+        NotificationCenter.default.publisher(for: .authTokenRejected)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    guard let self, self.isAuthenticated else { return }
+                    self.logout()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     // Signs the user back in from the Keychain on a later launch, but only if they have logged

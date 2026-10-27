@@ -38,6 +38,9 @@ class FeedViewModel: ObservableObject {
             feedItems = response.feed
             hasMorePages = response.pagination.page < response.pagination.totalPages
             currentPage = 1
+        } catch APIError.httpErrorWithMessage(401, _), APIError.httpError(401) {
+            // The saved token was rejected. AuthService signs out and shows the login screen, so
+            // no alert here.
         } catch {
             errorMessage = error.localizedDescription
         }
