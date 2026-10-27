@@ -4,9 +4,14 @@
 //
 //  Created for optimized animation constants
 //
+//  PURPOSE: A shelf of ready-made animation styles. Defining them once keeps
+//  animations consistent and lets you tune the feel of the whole app
+//  in one place.
+//
 
 import SwiftUI
 
+// A spring animation bounces slightly into place. Smaller numbers make it faster and tighter.
 struct AppAnimations {
     // Fast, smooth spring animations
     static let fastSpring = Animation.spring(response: 0.25, dampingFraction: 0.8, blendDuration: 0)
@@ -14,6 +19,8 @@ struct AppAnimations {
     static let quickSpring = Animation.spring(response: 0.2, dampingFraction: 0.75, blendDuration: 0)
     
     // List/item animations
+    // A transition is how a view appears or disappears, for example fading in while sliding
+    // down.
     static let listTransition = AnyTransition.opacity.combined(with: .move(edge: .top))
     static let slideTransition = AnyTransition.asymmetric(
         insertion: .move(edge: .trailing).combined(with: .opacity),

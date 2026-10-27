@@ -4,21 +4,40 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The one audio player the whole app shares. It downloads a sound
+//  file, plays it, and tells the screens what is happening (playing, paused,
+//  how far along). It can play a Track (loadTrack) or any other audio URL,
+//  such as a cypher entry (loadAudio / togglePlayback).
+//
 
 import Foundation
 import AVFoundation
 import Combine
 import MediaPlayer
 
+// A "service" holds logic that is not tied to one screen. `shared` below means
+// every screen uses this same player, so only one thing can play at a time.
 class AudioPlayerService: NSObject, ObservableObject {
     static let shared = AudioPlayerService()
     
+    // @Published values: when one changes, any screen watching this player
+    // redraws itself automatically.
     @Published var isPlaying = false
     @Published var currentTrack: Track?
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
     @Published var playbackRate: Float = 1.0
     
+    // Which audio URL is loaded right now. Entry rows compare this to their own
+    // URL to know if THEY are the one playing.
+    @Published var currentURL: String?
+    // Every audio URL that has played all the way to its natural end during this app session.
+    // Stopping early, pausing and leaving, or switching to another entry does NOT add to it.
+    // The voting screen uses this to know the listener really heard the whole entry,
+    // wherever they listened (the entries list or the vote sheet).
+    @Published var finishedURLs: Set<String> = []
+
+    // AVAudioPlayer is Apple's built-in class that actually makes the sound.
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
     private var audioSession: AVAudioSession = AVAudioSession.sharedInstance()
@@ -31,6 +50,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     // MARK: - Audio Session Setup
     
+    // The audio session tells iOS what kind of audio this app plays. The
+    // .playback category lets sound play even with the silent switch on.
     private func setupAudioSession() {
         do {
             try audioSession.setCategory(.playback, mode: .default, options: [.allowBluetoothA2DP])
@@ -42,6 +63,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     // MARK: - Remote Command Center (Lock Screen Controls)
     
+    // Connects the lock screen and headphone buttons (play, pause, scrub)
+    // to this player.
     private func setupRemoteCommandCenter() {
         let commandCenter = MPRemoteCommandCenter.shared()
         
@@ -89,6 +112,7 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     // MARK: - Playback Control
     
+    // Loads a Track (a song with an artist and a like count) and gets it ready.
     func loadTrack(_ track: Track) async throws {
         // Stop current playback
         stop()
@@ -116,6 +140,47 @@ class AudioPlayerService: NSObject, ObservableObject {
         updateNowPlayingInfo()
     }
     
+    // Loads audio from any URL. Cypher entries use this because an entry is
+    // not a Track. "async" means it waits for the download without freezing
+    // the screen. @MainActor makes it run on the main thread, which is where
+    // changes to @Published values must happen.
+    @MainActor
+    func loadAudio(urlString: String) async throws {
+        stop()
+        guard let url = URL(string: urlString) else {
+            throw AudioPlayerError.invalidURL
+        }
+        currentURL = urlString
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+        // A file that is not public comes back as an error page, not audio.
+        // Catch it here so the user sees "Failed to load audio".
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw AudioPlayerError.loadFailed
+        }
+
+        // If the user tapped a different entry while this one was downloading,
+        // drop this download so it does not take over the player.
+        guard currentURL == urlString else { return }
+
+        audioPlayer = try AVAudioPlayer(data: data)
+        audioPlayer?.delegate = self
+        audioPlayer?.prepareToPlay()
+        duration = audioPlayer?.duration ?? 0
+    }
+
+    // One call for a play/pause button: pauses if it is playing, resumes if it
+    // is paused, and downloads it first if it has not been loaded yet.
+    @MainActor
+    func togglePlayback(urlString: String) async throws {
+        if currentURL == urlString, audioPlayer != nil {
+            isPlaying ? pause() : play()
+        } else {
+            try await loadAudio(urlString: urlString)
+            play()
+        }
+    }
+
     func play() {
         guard let player = audioPlayer else { return }
         
@@ -137,6 +202,7 @@ class AudioPlayerService: NSObject, ObservableObject {
         updateNowPlayingInfo()
     }
     
+    // Stops playback and clears everything the player was holding.
     func stop() {
         audioPlayer?.stop()
         audioPlayer = nil
@@ -145,6 +211,7 @@ class AudioPlayerService: NSObject, ObservableObject {
         duration = 0
         stopTimer()
         currentTrack = nil
+        currentURL = nil
     }
     
     func seek(to time: TimeInterval) {
@@ -162,6 +229,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     // MARK: - Timer
     
+    // While audio plays, copy the current position into currentTime ten times
+    // a second. This is what makes progress bars move.
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self, let player = self.audioPlayer else { return }
@@ -176,6 +245,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     // MARK: - Now Playing Info (Lock Screen)
     
+    // Fills in the title and artist shown on the lock screen. Only Tracks have
+    // this info, so cypher entries show nothing there.
     private func updateNowPlayingInfo() {
         guard let track = currentTrack else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
@@ -201,8 +272,13 @@ class AudioPlayerService: NSObject, ObservableObject {
 
 // MARK: - AVAudioPlayerDelegate
 
+// A "delegate" is a helper that Apple's player calls back when something
+// happens, like the audio ending or being interrupted by a phone call.
 extension AudioPlayerService: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        // Remember which audio just finished. iOS only calls this when the audio reaches its end
+        // (flag is true), not when it is stopped early, so only complete listens are recorded.
+        if flag, let url = currentURL { finishedURLs.insert(url) }
         isPlaying = false
         currentTime = 0
         stopTimer()
@@ -227,6 +303,8 @@ extension AudioPlayerService: AVAudioPlayerDelegate {
 
 // MARK: - Errors
 
+// The error messages the player can show. errorDescription is the plain text
+// a user would see.
 enum AudioPlayerError: LocalizedError {
     case invalidURL
     case loadFailed
@@ -243,4 +321,3 @@ enum AudioPlayerError: LocalizedError {
         }
     }
 }
-

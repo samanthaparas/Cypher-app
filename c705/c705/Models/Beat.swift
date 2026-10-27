@@ -4,11 +4,16 @@
 //
 //  Created for Beats feature
 //
+//  PURPOSE: Data shapes for the beats marketplace: a beat, its producer, and
+//  the requests and replies for buying, previewing and reporting.
+//
 
 import Foundation
 
 // MARK: - Beat Response Models
 
+// One beat for sale. previewUrl is a short sample anyone can hear, fullUrl is the whole file,
+// and price is in cents.
 struct Beat: Codable, Identifiable {
     let id: String
     let title: String
@@ -47,6 +52,8 @@ struct Beat: Codable, Identifiable {
         let purchases: Int
     }
     
+    // Decoding by hand so purchaseCount can be read from the nested _count field the server
+    // sends.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -70,6 +77,7 @@ struct Beat: Codable, Identifiable {
         }
     }
     
+    // The reverse: turn the beat back into JSON.
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -87,12 +95,14 @@ struct Beat: Codable, Identifiable {
     }
 }
 
+// The producer who made the beat.
 struct BeatProducer: Codable {
     let id: String
     let username: String?
     let email: String
 }
 
+// A page of beats plus paging numbers.
 struct BeatsResponse: Codable {
     let beats: [Beat]
     let total: Int
@@ -101,6 +111,7 @@ struct BeatsResponse: Codable {
     let totalPages: Int
 }
 
+// A record that a user bought a beat. receipt is Apple's proof of purchase.
 struct BeatPurchase: Codable {
     let id: String
     let beatId: String
@@ -110,6 +121,7 @@ struct BeatPurchase: Codable {
     let beat: Beat
 }
 
+// What the app sends after an in-app purchase so the server can record it.
 struct PurchaseBeatRequest: Codable {
     let receipt: String
 }
@@ -123,6 +135,7 @@ struct PurchaseBeatResponse: Codable {
     let beat: Beat
 }
 
+// The server's reply when the app asks for a beat's preview link.
 struct PreviewUrlResponse: Codable {
     let previewUrl: String
 }
@@ -131,6 +144,7 @@ struct FullUrlResponse: Codable {
     let fullUrl: String
 }
 
+// What the app sends when someone reports a beat.
 struct ReportBeatRequest: Codable {
     let reason: String
 }

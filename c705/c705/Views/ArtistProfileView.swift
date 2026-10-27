@@ -4,6 +4,11 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: An artist's profile screen reached from a list or search. It now
+//  shows EnhancedArtistProfileView, but the older version of the
+//  profile is still below it in this file, so the file holds two
+//  profile designs.
+//
 
 import SwiftUI
 
@@ -14,8 +19,12 @@ struct ArtistProfileView: View {
     @EnvironmentObject var authService: AuthService
     
     var body: some View {
+        // The newer profile design. The older profile code below it (ScrollView) is left over
+        // and could be removed once it is confirmed unused.
         EnhancedArtistProfileView(artistId: artistId)
             .environmentObject(authService)
+        // The original profile screen: avatar circle, bio, counts, a follow button and the
+        // artist's tracks.
         ScrollView {
             VStack(spacing: 20) {
                 if viewModel.isLoading {
@@ -145,6 +154,7 @@ struct ArtistProfileView: View {
     }
 }
 
+// One track in an artist's list, with a play button, like count and date.
 struct TrackRowView: View {
     let track: Track
     @StateObject private var audioViewModel = AudioPlayerViewModel()
@@ -189,6 +199,7 @@ struct TrackRowView: View {
         .cornerRadius(8)
     }
     
+    // Turns the server's date text into a short date such as 10/15/26.
     private func formatDate(_ dateString: String) -> String {
         let formatter = ISO8601DateFormatter()
         if let date = formatter.date(from: dateString) {

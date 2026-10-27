@@ -4,13 +4,20 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Shows Google's sign-in screen and returns the result, the same job
+//  AppleSignInService does for Apple. It only works if Google's
+//  sign-in library has been added to the project.
+//
 
 import Foundation
+// This line only compiles the Google code when Google's library is installed, so the app still
+// builds without it.
 #if canImport(GoogleSignIn)
 import GoogleSignIn
 #endif
 
 @MainActor
+// Use GoogleSignInService.shared to start a Google sign-in.
 class GoogleSignInService {
     static let shared = GoogleSignInService()
     
@@ -20,6 +27,8 @@ class GoogleSignInService {
         // and configure it in GoogleSignIn.configure() when ready
     }
     
+    // Finds the screen to show Google's sheet on, runs the sign-in, and returns the token,
+    // email and name.
     func signIn() async throws -> GoogleSignInResult {
         #if canImport(GoogleSignIn)
         // Get the root view controller
@@ -80,6 +89,7 @@ class GoogleSignInService {
     }
 }
 
+// What a successful Google sign-in gives back.
 struct GoogleSignInResult {
     let userID: String
     let email: String?
@@ -89,6 +99,7 @@ struct GoogleSignInResult {
     let idToken: String
 }
 
+// The messages shown when Google sign-in fails or is not set up.
 enum GoogleSignInError: LocalizedError {
     case notConfigured
     case sdkNotInstalled

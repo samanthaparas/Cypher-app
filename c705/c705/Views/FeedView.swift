@@ -4,16 +4,24 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The Home screen: a search bar, a profile button, a row of section
+//  tabs (Trending, Articles, Events, City) and the content of
+//  whichever tab is selected.
+//
 
 import SwiftUI
 
 struct FeedView: View {
+    // Loads the feed data and keeps it alive while the screen is on.
     @StateObject private var viewModel = FeedViewModel()
+    // Which section tab is open. Changing it swaps the content below.
     @State private var selectedTab = "Trending"
     @State private var searchText = ""
     @State private var showProfile = false
+    // The shared sign-in service, passed down from the top of the app.
     @EnvironmentObject var authService: AuthService
     
+        // The section names. They also decide which screen is shown below.
         let tabs = ["Trending", "Articles", "Events", "City"]
     
     func getSearchPlaceholder() -> String {
@@ -80,6 +88,8 @@ struct FeedView: View {
             
             // Tab Content
             Group {
+                // Shows the screen for the selected tab. All four share one search box through
+                // searchText.
                 switch selectedTab {
                 case "Trending":
                     TrendingView(searchText: $searchText)
@@ -98,6 +108,8 @@ struct FeedView: View {
                         .environmentObject(authService)
                 }
             }
+            // This commented-out block is the floating mic button. It did nothing, so it was
+            // hidden (PR #9). Delete it or bring it back once recording from Home exists.
             // .overlay(alignment: .bottomTrailing) {
             //     // Floating Action Button (FAB)
             //     Button(action: {
@@ -116,13 +128,19 @@ struct FeedView: View {
             // }
                 }
         .background(Theme.background.ignoresSafeArea())
+        // Forces dark appearance for this screen and everything inside it.
         .environment(\.colorScheme, .dark)
+        // Runs once when the screen first appears: it loads the feed and records that the feed
+        // was viewed. The loaded items are not shown on screen right now, since each tab loads its
+        // own data.
         .task {
             if viewModel.feedItems.isEmpty {
                 await viewModel.loadFeed()
                 AnalyticsService.shared.trackFeedView()
             }
         }
+        // Shows an Error pop-up, with OK and Retry, whenever the view model holds an error
+        // message.
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
@@ -135,6 +153,7 @@ struct FeedView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        // Slides up the Profile screen when the profile button is tapped.
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .environmentObject(authService)

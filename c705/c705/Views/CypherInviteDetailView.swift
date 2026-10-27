@@ -4,13 +4,19 @@
 //
 //  Created for Cypher Invite response view
 //
+//  PURPOSE: The sheet for a cypher invite: it shows who invited you and lets
+//  you accept or decline. At the moment nothing in the app opens it,
+//  because the Arena never sets the invite it should show.
+//
 
 import SwiftUI
 
 struct CypherInviteDetailView: View {
     let invite: CypherInvite
+    // Shares the Arena's view model, so accepting an invite can refresh the Arena's data.
     @ObservedObject var viewModel: CypherHubViewModel
     @Environment(\.dismiss) var dismiss
+    // True while a response is being sent, which disables both buttons to prevent double taps.
     @State private var isResponding = false
     
     var body: some View {
@@ -89,6 +95,8 @@ struct CypherInviteDetailView: View {
         }
     }
     
+    // Sends "accepted" or "declined" to the server, reloads the Arena, and closes the sheet.
+    // Task { } lets this wait on the network without freezing the screen.
     private func respondToInvite(response: String) {
         isResponding = true
         Task {

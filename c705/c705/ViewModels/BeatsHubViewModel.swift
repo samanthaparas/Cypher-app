@@ -4,6 +4,9 @@
 //
 //  Created for Beats feature
 //
+//  PURPOSE: The data and logic for the Beats marketplace screen: loading beats,
+//  filtering by genre, BPM and mood, and searching.
+//
 
 import Foundation
 import Combine
@@ -13,6 +16,7 @@ class BeatsHubViewModel: ObservableObject {
     @Published var beats: [Beat] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    // The currently chosen filters. nil means no filter is applied for that option.
     @Published var selectedGenre: String? = nil
     @Published var selectedBpm: Int? = nil
     @Published var selectedMood: String? = nil
@@ -23,11 +27,14 @@ class BeatsHubViewModel: ObservableObject {
     private let pageLimit = 20
     private var hasMorePages = true
     
+    // The choices shown in the filter menu. To add a genre or mood, add it to these lists.
     // Available filters
     let genres = ["Hip-Hop", "Trap", "R&B", "Pop", "Drill", "Afrobeat", "Reggae", "Jazz", "Electronic", "Other"]
     let moods = ["Aggressive", "Chill", "Energetic", "Melodic", "Dark", "Upbeat", "Smooth", "Other"]
     let bpmRanges = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
     
+    // Loads the next page of beats using the chosen filters. The first page replaces the list
+    // and later pages are added to it.
     func loadBeats() async {
         guard !isLoading else { return }
         guard hasMorePages else { return }
@@ -52,6 +59,8 @@ class BeatsHubViewModel: ObservableObject {
             
             hasMorePages = currentPage < response.totalPages
             currentPage += 1
+        // Turns known server problems into friendly messages (for example, 401 means the user
+        // must sign in again).
         } catch let error as APIError {
             // Handle API errors with better messages
             print("❌ API Error loading beats: \(error)")
@@ -84,6 +93,7 @@ class BeatsHubViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Goes back to page 1 and reloads, used after a filter change or pull to refresh.
     func refreshBeats() async {
         currentPage = 1
         hasMorePages = true
@@ -91,6 +101,7 @@ class BeatsHubViewModel: ObservableObject {
         await loadBeats()
     }
     
+    // Saves the new filters and reloads the list.
     func applyFilters(genre: String?, bpm: Int?, mood: String?) {
         selectedGenre = genre
         selectedBpm = bpm
@@ -100,6 +111,7 @@ class BeatsHubViewModel: ObservableObject {
         }
     }
     
+    // Removes every filter and reloads.
     func clearFilters() {
         selectedGenre = nil
         selectedBpm = nil
@@ -110,6 +122,8 @@ class BeatsHubViewModel: ObservableObject {
     }
     
     // Filtered beats based on search text
+    // The list the screen shows: beats that match the search box in their title, genre, mood or
+    // producer name. This search happens on the phone, not on the server.
     var filteredBeats: [Beat] {
         if searchText.isEmpty {
             return beats

@@ -4,14 +4,20 @@
 //
 //  Universal search across users, cities, cyphers, and beats
 //
+//  PURPOSE: The Discover tab. One search box looks for people, cities, cyphers
+//  and beats at once and shows each kind in its own section. Tapping a
+//  result opens the matching screen.
+//
 
 import SwiftUI
 import Combine
 
+// The whole Discover screen: a title, the search box and the results.
 struct UniversalSearchView: View {
     @EnvironmentObject var authService: AuthService
     @StateObject private var viewModel = UniversalSearchViewModel()
     @State private var searchText = ""
+    // Holds the pending search so it can be cancelled when the user keeps typing.
     @State private var searchTask: Task<Void, Never>?
     
     var body: some View {
@@ -36,6 +42,8 @@ struct UniversalSearchView: View {
                     TextField("Search", text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
                         .padding(.vertical, 10)
+                        // Debouncing: wait half a second after the last keystroke, and only
+                        // then search, so the server is not asked on every letter.
                         .onChange(of: searchText) { oldValue, newValue in
                             // Cancel previous search
                             searchTask?.cancel()
@@ -144,6 +152,7 @@ struct UniversalSearchView: View {
 }
 
 // MARK: - Search Section
+// A reusable section with a heading, used for People, Cities, Cyphers and Beats.
 struct SearchSection<Content: View>: View {
     let title: String
     let icon: String
@@ -171,6 +180,7 @@ struct SearchSection<Content: View>: View {
 }
 
 // MARK: - User Search Result Row
+// One person in the results. Tapping opens their profile.
 struct UserSearchResultRow: View {
     let user: APIService.SearchUserResult
     
@@ -221,6 +231,7 @@ struct UserSearchResultRow: View {
 }
 
 // MARK: - City Search Result Row
+// One city in the results. Tapping opens the City screen.
 struct CitySearchResultRow: View {
     let city: String
     
@@ -248,6 +259,7 @@ struct CitySearchResultRow: View {
 }
 
 // MARK: - Cypher Search Result Row
+// One cypher in the results. Tapping opens the cypher.
 struct CypherSearchResultRow: View {
     let cypher: APIService.SearchCypherResult
     
@@ -291,6 +303,7 @@ struct CypherSearchResultRow: View {
 }
 
 // MARK: - Beat Search Result Row
+// One beat in the results.
 struct BeatSearchResultRow: View {
     let beat: APIService.SearchBeatResult
     
@@ -335,6 +348,7 @@ struct BeatSearchResultRow: View {
 
 // MARK: - View Model
 @MainActor
+// Holds the results of the last search and whether a search is running.
 class UniversalSearchViewModel: ObservableObject {
     @Published var users: [APIService.SearchUserResult] = []
     @Published var cities: [String] = []
@@ -348,6 +362,8 @@ class UniversalSearchViewModel: ObservableObject {
         !users.isEmpty || !cities.isEmpty || !cyphers.isEmpty || !beats.isEmpty
     }
     
+    // Searches only when at least 2 characters are typed. If the search fails, the results are
+    // cleared, so the screen shows "No results".
     func search(query: String) async {
         guard query.count >= 2 else {
             clearResults()
@@ -370,6 +386,7 @@ class UniversalSearchViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Empties all four result lists.
     func clearResults() {
         users = []
         cities = []
@@ -379,6 +396,7 @@ class UniversalSearchViewModel: ObservableObject {
 }
 
 // MARK: - Search Result Models (typealiases for APIService models)
+// Shorter names for the result shapes that are defined inside APIService.
 typealias SearchUserResult = APIService.SearchUserResult
 typealias SearchCypherResult = APIService.SearchCypherResult
 typealias SearchBeatResult = APIService.SearchBeatResult

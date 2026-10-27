@@ -4,9 +4,14 @@
 //
 //  Created for Subscription models
 //
+//  PURPOSE: Shapes for money features: subscription plans, producer earnings
+//  and payouts. These are planned for a later version, since 1.0 does
+//  not sell anything.
+//
 
 import Foundation
 
+// The plan a user is on.
 enum SubscriptionTier: String, Codable {
     case FREE
     case CREATOR_PLUS
@@ -23,6 +28,8 @@ struct SubscriptionResponse: Codable {
     let isActive: Bool
 }
 
+// A producer's money summary. Amounts are whole cents (500 means $5.00) to avoid decimal
+// rounding mistakes.
 struct ProducerEarningsResponse: Codable {
     let pendingBalance: Int // in cents
     let totalPaid: Int // in cents
@@ -31,6 +38,8 @@ struct ProducerEarningsResponse: Codable {
     let pendingPurchases: Int
 }
 
+// One payout request: the total, the platform's cut, what the producer receives, and its
+// status.
 struct PayoutResponse: Codable {
     let id: String
     let producerId: String
@@ -41,6 +50,7 @@ struct PayoutResponse: Codable {
     let createdAt: String
 }
 
+// A producer's list of past payouts.
 struct PayoutHistoryResponse: Codable {
     let payouts: [Payout]
     

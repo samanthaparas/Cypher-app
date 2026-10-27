@@ -4,11 +4,18 @@
 //
 //  Created for creating cyphers with user invites and beat selection
 //
+//  PURPOSE: The Create Cypher form: a title, an optional description, someone
+//  to invite, and a beat. The Create button stays gray until there is
+//  a title and a beat chosen, so a cypher cannot be made without one.
+//  This file also holds RecordOverBeatView, for recording an entry
+//  over the chosen beat.
+//
 
 import SwiftUI
 import AVFoundation
 import UniformTypeIdentifiers
 
+// The form, shown as a sheet from the Arena.
 struct CreateCypherView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authService: AuthService
@@ -16,6 +23,8 @@ struct CreateCypherView: View {
     
     @State private var cypherTitle = ""
     @State private var cypherDescription = ""
+    // The beat chosen for the cypher. It comes from purchased beats or a file imported from the
+    // phone.
     @State private var selectedBeat: ProfileBeat?
     @State private var selectedUser: SearchUser?
     @State private var searchUsername = ""
@@ -31,6 +40,7 @@ struct CreateCypherView: View {
     @State private var recordedAudioURL: URL?
     @State private var showBeatsDropdown = false
     @State private var showFilePicker = false
+    // Holds the pending user search so it can be cancelled when the user keeps typing.
     @State private var searchTask: Task<Void, Never>?
     
     private let apiService = APIService.shared
@@ -73,6 +83,7 @@ struct CreateCypherView: View {
                             HStack(spacing: 12) {
                                 TextField("Search by username", text: $searchUsername)
                                     .textFieldStyle(ModernTextFieldStyle())
+                                    // Starts a user search as the username is typed.
                                     .onChange(of: searchUsername) { oldValue, newValue in
                                         // Cancel previous search task
                                         searchTask?.cancel()
@@ -387,11 +398,13 @@ struct CreateCypherView: View {
                     }
                 }
             }
+            // Shows the error message when creating the cypher fails.
             .alert("Error", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
+            // Opens the recorder so the creator can record their own entry over the beat.
             .sheet(isPresented: $showRecordSheet) {
                 if let beat = selectedBeat {
                     RecordOverBeatView(
@@ -403,6 +416,7 @@ struct CreateCypherView: View {
                     )
                 }
             }
+            // Opens the Files app so the user can import an audio file as a beat.
             .fileImporter(
                 isPresented: $showFilePicker,
                 allowedContentTypes: [UTType.audio, UTType.mp3, UTType.mpeg4Audio],
@@ -418,20 +432,25 @@ struct CreateCypherView: View {
                     showError = true
                 }
             }
+            // Loads the user's beats when the form first appears.
             .task {
                 await loadBeats()
             }
         }
     }
     
+    // Purchased beats and imported beats together, for the beat picker.
     private var allBeats: [ProfileBeat] {
         purchasedBeats + importedBeats
     }
     
+    // The rule for turning the Create button on: a title and a chosen beat.
     private var canCreate: Bool {
         !cypherTitle.isEmpty && selectedBeat != nil
     }
     
+    // Loads the beats the user has bought from the server, plus beats they imported earlier,
+    // which are remembered on the phone.
     private func loadBeats() async {
         isLoadingBeats = true
         
@@ -460,6 +479,8 @@ struct CreateCypherView: View {
         }
     }
     
+    // Looks up users to invite. It needs at least 2 letters, and a failed search shows nothing
+    // instead of an error.
     private func searchUsers() {
         // Require at least 2 characters
         guard searchUsername.count >= 2 else {
@@ -493,6 +514,7 @@ struct CreateCypherView: View {
         }
     }
     
+    // Handles a file picked from the Files app so it can be offered as a beat.
     private func handleImportedFile(url: URL) {
         // Start accessing the security-scoped resource
         guard url.startAccessingSecurityScopedResource() else {
@@ -528,6 +550,9 @@ struct CreateCypherView: View {
         selectedBeat = importedBeat
     }
     
+    // Creates the cypher, then invites the chosen user and submits the recorded entry, if there
+    // are any. An imported beat is not uploaded yet, so for those the cypher is created without
+    // a beat link.
     private func createCypher() async {
         guard let beat = selectedBeat else { return }
         
@@ -545,16 +570,16 @@ struct CreateCypherView: View {
                 beatUrl = nil
             }
             
-            // Create cypher with INVITE_ONLY visibility
-            // Note: The backend uses cypherType, but we need to set visibility to INVITE_ONLY
-            // For now, we'll use BEAT_LOCKED as the type and the backend should handle visibility
+            // The cypher is public (visible in the Arena) unless the creator picked someone to invite,
+            // in which case it is invite-only.
             let cypher = try await apiService.createCypher(
                 title: cypherTitle,
                 description: cypherDescription.isEmpty ? nil : cypherDescription,
                 beatUrl: beatUrl,
-                cypherType: "BEAT_LOCKED", // Type is BEAT_LOCKED, visibility will be set to INVITE_ONLY by backend
+                cypherType: "BEAT_LOCKED",
                 startDate: Date(),
-                endDate: nil
+                endDate: nil,
+                visibility: selectedUser == nil ? "PUBLIC" : "INVITE_ONLY"
             )
             
             // If user is selected, invite them
@@ -598,6 +623,7 @@ struct CreateCypherView: View {
 }
 
 // MARK: - Modern Text Field Style (ViewModifier to avoid "visual style disabled" warnings)
+// The rounded, light-gray text box look used by the form's fields.
 struct ModernTextFieldModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -609,6 +635,7 @@ struct ModernTextFieldModifier: ViewModifier {
     }
 }
 
+// Lets the form's text fields use that look with .textFieldStyle(...).
 struct ModernTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
@@ -619,6 +646,8 @@ struct ModernTextFieldStyle: TextFieldStyle {
 // MARK: - Search User Model (moved to separate file for reuse)
 
 // MARK: - Record Over Beat View
+// A recording screen that is tied to a specific beat. When the recording is done it hands the
+// file back to the form.
 struct RecordOverBeatView: View {
     let beat: ProfileBeat
     let onRecordingComplete: (URL) -> Void

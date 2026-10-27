@@ -4,6 +4,9 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The data and logic for one track's comments: loading them, loading
+//  more as you scroll, and posting a new one.
+//
 
 import Foundation
 import Combine
@@ -17,6 +20,7 @@ class CommentsViewModel: ObservableObject {
     @Published var newCommentText = ""
     @Published var isPosting = false
     @Published var currentPage = 1
+    // Tracks whether there are more pages left to load.
     @Published var hasMoreComments = true
     
     private let apiService = APIService.shared
@@ -27,6 +31,7 @@ class CommentsViewModel: ObservableObject {
         self.trackId = trackId
     }
     
+    // Loads the first page of comments.
     func loadComments() async {
         guard !isLoading else { return }
         
@@ -45,6 +50,8 @@ class CommentsViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Loads the next page and adds it to the end of the list. Called when the user scrolls near
+    // the bottom.
     func loadMoreComments() async {
         guard hasMoreComments && !isLoadingMore else { return }
         
@@ -62,6 +69,8 @@ class CommentsViewModel: ObservableObject {
         isLoadingMore = false
     }
     
+    // Posts the typed comment. It ignores empty text, clears the box right away, adds the
+    // comment at the top, and puts the text back if sending fails.
     func postComment() async {
         guard !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard !isPosting else { return }
@@ -84,6 +93,7 @@ class CommentsViewModel: ObservableObject {
         isPosting = false
     }
     
+    // Starts over from page 1, for pull to refresh.
     func refresh() async {
         currentPage = 1
         comments = []

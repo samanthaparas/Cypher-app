@@ -4,12 +4,18 @@
 //
 //  Created for Beats feature
 //
+//  PURPOSE: The Beats tab ("Beats Marketplace"): a search bar, filter and
+//  upload buttons, and a scrolling list of beat cards. It also holds
+//  the beat card, the filter chip and the filter sheet.
+//
 
 import SwiftUI
 
+// The whole Beats screen. It owns a BeatsHubViewModel that loads and filters the beats.
 struct BeatsHubView: View {
     @StateObject private var viewModel = BeatsHubViewModel()
     @EnvironmentObject var authService: AuthService
+    // Whether the filter sheet is open.
     @State private var showFilters = false
     @State private var showUploadSheet = false
     
@@ -18,6 +24,8 @@ struct BeatsHubView: View {
     }
     
     var body: some View {
+        // A navigation container so tapping a beat can push its detail screen with a Back
+        // button.
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
@@ -142,6 +150,8 @@ struct BeatsHubView: View {
                     .padding(.top, 60)
                 } else {
                     LazyVStack(spacing: 16) {
+                        // One card per beat that matches the search box. Tapping a card opens
+                        // BeatDetailView.
                         ForEach(viewModel.filteredBeats) { beat in
                             NavigationLink(destination: BeatDetailView(beat: beat)) {
                                 BeatCardView(beat: beat)
@@ -161,6 +171,7 @@ struct BeatsHubView: View {
                 }
                 }
             }
+            // Lets the user pull down to reload the list.
             .refreshable {
                 await viewModel.refreshBeats()
             }
@@ -170,12 +181,15 @@ struct BeatsHubView: View {
                     EmptyView()
                 }
             }
+            // Slides up the genre and mood filters.
             .sheet(isPresented: $showFilters) {
                 BeatsFiltersView(viewModel: viewModel)
             }
+            // Slides up the form for uploading a beat.
             .sheet(isPresented: $showUploadSheet) {
                 UploadBeatView(viewModel: viewModel)
             }
+            // Loads the first page of beats when the screen first appears.
             .task {
                 await viewModel.loadBeats()
             }
@@ -183,6 +197,7 @@ struct BeatsHubView: View {
     }
 }
 
+// One beat in the list: title, genre, producer and price.
 struct BeatCardView: View {
     let beat: Beat
     
@@ -233,12 +248,14 @@ struct BeatCardView: View {
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
     
+    // Prices are stored in cents. This turns 999 into $9.99.
     private func formatPrice(_ cents: Int) -> String {
         let dollars = Double(cents) / 100.0
         return String(format: "$%.2f", dollars)
     }
 }
 
+// A small tappable tag, used to show an active filter.
 struct FilterChip: View {
     let title: String
     let action: () -> Void
@@ -262,6 +279,8 @@ struct FilterChip: View {
     }
 }
 
+// The filter sheet: pick a genre and a mood, then Apply. Apply sends the choices to the view
+// model, which reloads the list.
 struct BeatsFiltersView: View {
     @ObservedObject var viewModel: BeatsHubViewModel
     @Environment(\.dismiss) var dismiss

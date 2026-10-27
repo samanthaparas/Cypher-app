@@ -4,6 +4,9 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The data and logic for the Home feed: loading it, loading more
+//  pages as you scroll, and refreshing.
+//
 
 import Foundation
 import Combine
@@ -19,8 +22,10 @@ class FeedViewModel: ObservableObject {
     
     private let apiService = APIService.shared
     private let pageSize = 20
+    // An extra guard so scrolling can never start the same page load twice.
     private var isLoadingNextPage = false // Prevent duplicate loads
     
+    // Loads the first page of the feed and replaces whatever was showing.
     func loadFeed() async {
         guard !isLoading else { return }
         
@@ -40,6 +45,7 @@ class FeedViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Loads the next page and adds it to the bottom. This is called infinite scrolling.
     func loadMore() async {
         // Prevent duplicate loads
         guard !isLoadingNextPage && !isLoadingMore && hasMorePages else { return }
@@ -69,6 +75,7 @@ class FeedViewModel: ObservableObject {
         isLoadingNextPage = false
     }
     
+    // Clears everything and reloads from page 1, for pull to refresh.
     func refresh() async {
         currentPage = 1
         feedItems = []
@@ -78,6 +85,8 @@ class FeedViewModel: ObservableObject {
     }
     
     // Check if we should load more based on item index
+    // Called as each row appears. When the user is within 3 items of the end, it quietly loads
+    // the next page.
     func shouldLoadMore(for itemIndex: Int) {
         // Load more when user is 3 items away from the end
         let threshold = feedItems.count - 3

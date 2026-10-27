@@ -4,10 +4,15 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: A developer screen to check that the app can reach the backend, and
+//  to set a custom server address on a real iPhone. Nothing in the app
+//  opens it right now.
+//
 
 import SwiftUI
 
 struct ConnectionTestView: View {
+    // The results of the last test. They stay empty until Test Connections is tapped.
     @State private var backendResult: ConnectionTestResult?
     @State private var databaseResult: ConnectionTestResult?
     @State private var isTesting = false
@@ -26,6 +31,8 @@ struct ConnectionTestView: View {
                             .foregroundColor(.secondary)
                     }
                     
+                    // This button only exists on a real iPhone, because the Simulator can use
+                    // localhost directly.
                     #if !targetEnvironment(simulator)
                     Button("Set Custom URL") {
                         showCustomURLInput = true
@@ -34,6 +41,8 @@ struct ConnectionTestView: View {
                 }
                 
                 Section(header: Text("Connection Tests")) {
+                    // Runs both checks (the server, then the database through the server) and
+                    // shows spinners while it waits.
                     Button(action: {
                         Task {
                             await testConnections()
@@ -100,6 +109,8 @@ struct ConnectionTestView: View {
         }
     }
     
+    // Runs both connection tests one after the other and saves their results for the screen to
+    // show.
     private func testConnections() async {
         isTesting = true
         
@@ -113,6 +124,7 @@ struct ConnectionTestView: View {
     }
 }
 
+// One result: a green check or red cross, a message and the details.
 struct ConnectionResultRow: View {
     let title: String
     let result: ConnectionTestResult

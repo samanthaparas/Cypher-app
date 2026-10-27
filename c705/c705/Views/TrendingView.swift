@@ -4,9 +4,14 @@
 //
 //  Created for Trending tab with sub-navigation
 //
+//  PURPOSE: The Trending tab on Home. It has two pill buttons, Beats and
+//  Cyphers, and shows a scrolling list of beats or of cyphers
+//  underneath.
+//
 
 import SwiftUI
 
+// The container: it holds the Beats/Cyphers pills and swaps the list below them.
 struct TrendingView: View {
     @State private var selectedSubTab = "Beats"
     @EnvironmentObject var authService: AuthService
@@ -16,6 +21,7 @@ struct TrendingView: View {
         _searchText = searchText
     }
     
+    // The two pills. Each name matches a case in the switch below.
     let subTabs = ["Beats", "Cyphers"]
     
     var body: some View {
@@ -40,6 +46,8 @@ struct TrendingView: View {
             
             // Sub-tab content
             Group {
+                // Shows the beats list or the cyphers list, with a slide animation when
+                // switching.
                 switch selectedSubTab {
                 case "Beats":
                     TrendingBeatsView(searchText: $searchText)
@@ -60,6 +68,8 @@ struct TrendingView: View {
     }
 }
 
+// The list of beats. It shows a spinner while loading, a friendly message if there are none,
+// and otherwise a card for each beat that opens its detail screen.
 struct TrendingBeatsView: View {
     @StateObject private var viewModel = BeatsHubViewModel()
     @EnvironmentObject var authService: AuthService
@@ -130,6 +140,7 @@ struct TrendingBeatsView: View {
         }
     }
     
+    // The beats to show, narrowed by what is typed in the Home search box.
     var filteredBeats: [Beat] {
         var beats = viewModel.beats
         
@@ -148,6 +159,7 @@ struct TrendingBeatsView: View {
         return beats
     }
     
+    // With search text, it asks for matching beats. Without it, it loads the normal list.
     func performSearch() async {
         if !searchText.isEmpty {
             viewModel.searchText = searchText
@@ -158,6 +170,8 @@ struct TrendingBeatsView: View {
     }
 }
 
+// The list of cyphers. It reads all active cyphers and shows each as a card that opens the
+// cypher's detail screen.
 struct TrendingCyphersView: View {
     @StateObject private var viewModel = CypherHubViewModel()
     @EnvironmentObject var authService: AuthService
@@ -212,6 +226,8 @@ struct TrendingCyphersView: View {
         }
     }
     
+    // Cyphers matching the search text, sorted so the ones with the most entries come first.
+    // That is how "trending" is decided here.
     var filteredCyphers: [Cypher] {
         var cyphers = viewModel.cyphers
         
@@ -228,6 +244,7 @@ struct TrendingCyphersView: View {
         return cyphers.sorted(by: { ($0.entryCount ?? 0) > ($1.entryCount ?? 0) })
     }
     
+    // Loads the cyphers. The search text is applied on the phone by filteredCyphers.
     func performSearch() async {
         await viewModel.loadCyphers()
     }

@@ -4,17 +4,24 @@
 //
 //  Created for Beat upload functionality
 //
+//  PURPOSE: The form for uploading a beat: title, genre, mood, an audio file
+//  from the Files app, and, for producers, a price. It checks the
+//  form, uploads the file, and refreshes the beats list.
+//
 
 import SwiftUI
 import UniformTypeIdentifiers
 
+// Opened from the Beats screen's plus button.
 struct UploadBeatView: View {
+    // Shares the Beats screen's view model, so a new upload shows up in its list right away.
     @ObservedObject var viewModel: BeatsHubViewModel
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authService: AuthService
     
     @State private var title = ""
     @State private var selectedGenre = "Hip-Hop"
+    // A fixed BPM that is always sent. The form no longer asks for it.
     @State private var bpm = 120 // Default BPM, no longer user-editable
     @State private var selectedMood: String? = nil
     @State private var priceText = "9.99" // Price as text input
@@ -34,6 +41,7 @@ struct UploadBeatView: View {
     
     var body: some View {
         NavigationView {
+            // A Form gives the standard iOS settings-style layout, with grouped sections.
             Form {
                 Section(header: Text("Beat Information")) {
                     TextField("Beat Title", text: $title)
@@ -141,6 +149,8 @@ struct UploadBeatView: View {
                     }
                 }
             }
+            // Opens the Files app so the user can pick an audio file (mp3, m4a or wav). The
+            // chosen file's name is shown on screen.
             .fileImporter(
                 isPresented: $showFilePicker,
                 allowedContentTypes: [
@@ -178,6 +188,8 @@ struct UploadBeatView: View {
         }
     }
     
+    // Turns the typed price (such as $9.99) into cents and rejects anything outside $0.99 to
+    // $99.99.
     private func parsePrice() -> Int? {
         // Remove any dollar signs or whitespace
         let cleaned = priceText.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "$", with: "")
@@ -196,6 +208,8 @@ struct UploadBeatView: View {
         return Int(dollars * 100)
     }
     
+    // Checks the form (file, title and, for sellers, a valid price), reads the file, uploads
+    // it, refreshes the list and shows a success message. Any problem becomes an error alert.
     private func uploadBeat() async {
         guard let fileURL = selectedFile else {
             await MainActor.run {
@@ -235,6 +249,8 @@ struct UploadBeatView: View {
         
         do {
             // Access security-scoped resource (required for files picked via fileImporter)
+            // Files picked from the Files app are protected. The app must ask for temporary
+            // access to read them and give it back afterwards.
             let didStartAccess = fileURL.startAccessingSecurityScopedResource()
             defer {
                 if didStartAccess {

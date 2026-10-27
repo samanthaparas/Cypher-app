@@ -4,14 +4,24 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The screen for one cypher, with three tabs: Details (rules, how it
+//  works, and the button to record an entry), Entries (everyone's
+//  entries, which can be played and voted on) and Leaderboard (entries
+//  ranked by score).
+//
 
 import SwiftUI
 
+// Given a cypher's id, it loads the cypher and shows it. It has its own NavigationView and a
+// Done button, so it is designed to be shown full screen, not pushed onto another screen.
 struct CypherDetailView: View {
     let cypherId: String
     @Environment(\.dismiss) var dismiss
+    // Loads and holds this cypher's data (details, entries, leaderboard).
     @StateObject private var viewModel = CypherDetailViewModel()
+    // Which of the three tabs is open.
     @State private var selectedTab = "Details"
+    // True when the Record sheet should be showing.
     @State private var showRecordSheet = false
     
     var body: some View {
@@ -50,15 +60,19 @@ struct CypherDetailView: View {
                     }
                 }
             }
+            // Slides up the recording screen when the user taps Record Your Entry.
             .sheet(isPresented: $showRecordSheet) {
                 RecordCypherView(cypherId: cypherId, cypher: viewModel.cypher)
             }
+            // Loads the cypher's details when the screen first appears.
             .task {
                 await viewModel.loadCypher(id: cypherId)
             }
         }
     }
     
+    // The Details tab: description, the beat, the rules, how voting works, and either the
+    // Record button or the user's existing score.
     private var cypherDetailsView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -163,6 +177,8 @@ struct CypherDetailView: View {
         }
     }
     
+    // The Entries tab: one card per entry. A vote is sent to the server and the entries reload
+    // to show the new scores.
     private var cypherEntriesView: some View {
         ScrollView {
             VStack(spacing: 12) {
@@ -190,6 +206,7 @@ struct CypherDetailView: View {
         }
     }
     
+    // The Leaderboard tab: entries ranked by score.
     private var leaderboardView: some View {
         ScrollView {
             VStack(spacing: 12) {
@@ -214,6 +231,7 @@ struct CypherDetailView: View {
     }
 }
 
+// One rule line with a green check, used in the Details tab.
 struct RuleRow: View {
     let text: String
     

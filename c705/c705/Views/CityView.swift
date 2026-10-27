@@ -4,6 +4,9 @@
 //
 //  Created for City tab showing major music cities and artists
 //
+//  PURPOSE: The City tab on Home: pick a major city from a row of pills to see
+//  the artists based there, or search by name or city.
+//
 
 import SwiftUI
 import Combine
@@ -12,12 +15,14 @@ struct CityView: View {
     @StateObject private var viewModel = CityViewModel()
     @EnvironmentObject var authService: AuthService
     @Binding var searchText: String
+    // The city the user tapped. nil means none chosen yet.
     @State private var selectedCity: String?
     
     init(searchText: Binding<String> = .constant("")) {
         _searchText = searchText
     }
     
+    // The cities shown as pills. To add a city, add it to this list.
     let majorCities = [
         "New York", "Los Angeles", "Atlanta", "Chicago", "Houston",
         "Miami", "Detroit", "Philadelphia", "Memphis", "Oakland"
@@ -50,6 +55,8 @@ struct CityView: View {
                 if viewModel.isLoading {
                     ProgressView("Loading artists...")
                         .padding()
+                // Nothing to show: prompt the user to pick a city, or say no artists were
+                // found.
                 } else if filteredArtists.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "map.fill")
@@ -73,6 +80,7 @@ struct CityView: View {
                 }
             }
         }
+        // Lets the user pull down to reload.
         .refreshable {
             await performSearch()
         }
@@ -88,6 +96,7 @@ struct CityView: View {
         }
     }
     
+    // The artists to display, narrowed by the search box if something is typed.
     var filteredArtists: [ArtistSummary] {
         var artists = viewModel.artists
         
@@ -103,6 +112,8 @@ struct CityView: View {
         return artists
     }
     
+    // Searches when there is text in the search box. Otherwise it reloads the selected city's
+    // artists.
     func performSearch() async {
         if !searchText.isEmpty {
             // Search artists and cities
@@ -115,11 +126,14 @@ struct CityView: View {
 }
 
 @MainActor
+// Holds the artists and loading state for this screen.
 class CityViewModel: ObservableObject {
     @Published var artists: [ArtistSummary] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
+    // Fetches artists matching the city, then keeps only those whose city really contains that
+    // name.
     func loadArtistsForCity(_ city: String) async {
         isLoading = true
         errorMessage = nil
@@ -135,6 +149,7 @@ class CityViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Fetches artists matching the typed text in their name or city.
     func searchArtistsAndCities(query: String) async {
         isLoading = true
         errorMessage = nil

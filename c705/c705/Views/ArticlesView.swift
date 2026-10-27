@@ -4,14 +4,21 @@
 //
 //  Created for Articles tab with external API and journalist articles
 //
+//  PURPOSE: The Articles tab on Home. It mixes two sources behind three pill
+//  buttons: All, C705 Articles (written by journalists in the app) and
+//  Latest News (stories the backend pulls from outside news services).
+//  Tapping a news story opens it in Safari.
+//
 
 import SwiftUI
 import Combine
 
+// Shows the pills and the list of article cards.
 struct ArticlesView: View {
     @StateObject private var viewModel = ArticlesViewModel()
     @EnvironmentObject var authService: AuthService
     @Binding var searchText: String
+    // Which pill is selected. Changing it reloads the list.
     @State private var selectedSource = "All" // "All", "C705 Articles", "Latest News"
     
     init(searchText: Binding<String> = .constant("")) {
@@ -68,16 +75,20 @@ struct ArticlesView: View {
                 .padding()
             }
         }
+        // Pull down to reload. It runs in a separate Task so SwiftUI cannot cancel it halfway
+        // through the refresh.
         .refreshable {
             // Use Task.detached to prevent cancellation during refresh
             await Task.detached { @MainActor in
                 await viewModel.searchArticles(query: searchText.isEmpty ? nil : searchText, source: selectedSource)
             }.value
         }
+        // Loads the articles when the screen first appears.
         .task {
             // Load articles on initial view
             await viewModel.searchArticles(query: searchText.isEmpty ? nil : searchText, source: selectedSource)
         }
+        // Reloads when the Home search text changes.
         .onChange(of: searchText) { oldValue, newValue in
             Task {
                 await viewModel.searchArticles(query: newValue.isEmpty ? nil : newValue, source: selectedSource)
@@ -90,6 +101,8 @@ struct ArticlesView: View {
         }
     }
     
+    // First narrows by the selected pill (journalist articles or outside news), then by the
+    // search text.
     var filteredArticles: [ArticleItem] {
         let sourceFiltered: [ArticleItem]
         switch selectedSource {
@@ -116,6 +129,8 @@ struct ArticlesView: View {
     }
 }
 
+// One shape for both kinds of article, so the list can treat journalist posts and outside news
+// the same. isFromJournalist tells them apart.
 struct ArticleItem: Identifiable {
     let id: String
     let title: String
@@ -128,6 +143,7 @@ struct ArticleItem: Identifiable {
     let city: String?
 }
 
+// One article as a card.
 struct ArticleCardView: View {
     let article: ArticleItem
     
@@ -190,11 +206,14 @@ struct ArticleCardView: View {
 }
 
 @MainActor
+// Loads the articles for the screen.
 class ArticlesViewModel: ObservableObject {
     @Published var articles: [ArticleItem] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
+    // Loads journalist articles and news at the same time (a TaskGroup runs both together),
+    // depending on the selected source, then combines them.
     func searchArticles(query: String?, source: String) async {
         isLoading = true
         errorMessage = nil
@@ -255,6 +274,7 @@ class ArticlesViewModel: ObservableObject {
         }.value
     }
     
+    // Gets articles written in the app from the backend.
     private func loadJournalistArticles(query: String?) async throws -> [ArticleItem] {
         // Load articles from backend (journalist posts)
         do {
@@ -292,6 +312,8 @@ class ArticlesViewModel: ObservableObject {
         }
     }
     
+    // Gets hip-hop news from the backend, which fetches it from a news service. That keeps the
+    // news API key on the server instead of in the app.
     private func loadExternalArticles(query: String?) async throws -> [ArticleItem] {
         // Load hip hop news from backend (which calls NewsAPI)
         // This keeps API keys secure and allows caching

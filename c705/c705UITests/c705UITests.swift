@@ -4,11 +4,16 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Home for tests that launch the app and tap through it like a user.
+//  It only holds Xcode's example checks (launch the app, time the
+//  launch).
+//
 
 import XCTest
 
 final class c705UITests: XCTestCase {
 
+    // Runs before each test. continueAfterFailure = false stops a test at its first failure.
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -32,6 +37,7 @@ final class c705UITests: XCTestCase {
     }
 
     @MainActor
+    // Measures how long the app takes to start.
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {

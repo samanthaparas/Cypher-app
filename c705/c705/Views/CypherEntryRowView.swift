@@ -4,16 +4,33 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The small cards shown inside a cypher. This file has three views:
+//  CypherEntryRowView (one artist's entry, with play, report and vote buttons),
+//  LeaderboardRowView (one ranked line on the leaderboard) and ReportEntryView
+//  (the sheet where someone reports an entry).
+//
 
 import SwiftUI
 
+// One entry in a cypher: who posted it, its score, a play button, and a vote button.
 struct CypherEntryRowView: View {
     let entry: CypherEntry
     let onVote: (Int, Int, Int) -> Void
-    @State private var isPlaying = false
+
+    // The app's shared audio player. @ObservedObject makes this row redraw
+    // whenever the player changes, so the play button flips to pause by itself.
+    @ObservedObject private var player = AudioPlayerService.shared
+    @State private var isLoadingAudio = false
+    @State private var audioError: String?
     @State private var hasVoted = false
     @State private var showReportSheet = false
     @State private var showVotingSheet = false
+
+    // True only when THIS entry is the audio currently playing. Without the URL
+    // check, every row would show "pause" whenever any entry played.
+    private var isPlayingThisEntry: Bool {
+        player.isPlaying && player.currentURL == entry.audioUrl
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -57,21 +74,28 @@ struct CypherEntryRowView: View {
             
             // Audio Player
             HStack {
+                // Play/pause. The Task { } wrapper lets a button start work that
+                // has to wait (the download) without freezing the screen.
                 Button(action: {
-                    // TODO: Play audio
-                    isPlaying.toggle()
+                    Task { await togglePlayback() }
                 }) {
-                    Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.blue)
+                    if isLoadingAudio {
+                        ProgressView()
+                            .frame(width: 32, height: 32)
+                    } else {
+                        Image(systemName: isPlayingThisEntry ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.blue)
+                    }
                 }
+                .disabled(isLoadingAudio)
                 
-                // Waveform placeholder
+                // Waveform placeholder: decoration only, not drawn from the audio.
                 HStack(spacing: 2) {
-                    ForEach(0..<20, id: \.self) { _ in
+                    ForEach(0..<20, id: \.self) { index in
                         Rectangle()
                             .fill(Color.blue.opacity(0.3))
-                            .frame(width: 3, height: CGFloat.random(in: 10...30))
+                            .frame(width: 3, height: waveformHeight(index))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -115,6 +139,16 @@ struct CypherEntryRowView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        // Pops up a message if the audio could not be loaded, for example when
+        // the file is not public or the phone is offline.
+        .alert("Couldn't play this entry", isPresented: Binding(
+            get: { audioError != nil },
+            set: { if !$0 { audioError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(audioError ?? "")
+        }
         .sheet(isPresented: $showReportSheet) {
             ReportEntryView(entryId: entry.id)
         }
@@ -125,8 +159,29 @@ struct CypherEntryRowView: View {
             }
         }
     }
+
+    // Asks the shared player to play, pause, or resume this entry's audio.
+    // If it fails, the message is saved so the alert above can show it.
+    private func togglePlayback() async {
+        isLoadingAudio = true
+        defer { isLoadingAudio = false }
+        do {
+            try await player.togglePlayback(urlString: entry.audioUrl)
+        } catch {
+            audioError = error.localizedDescription
+        }
+    }
+
+    // Picks a bar height from the entry's id, so the same entry always gets the
+    // same bars. Random heights would flicker every time the player updates.
+    private func waveformHeight(_ index: Int) -> CGFloat {
+        let seed = (entry.id + String(index)).unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) % 1000 }
+        return 10 + CGFloat(seed % 21)
+    }
 }
 
+// One line on a cypher's leaderboard: rank number, artist, and score.
+// The top three ranks get an orange highlight.
 struct LeaderboardRowView: View {
     let entry: LeaderboardEntry
     
@@ -179,6 +234,8 @@ struct LeaderboardRowView: View {
     }
 }
 
+// The sheet for reporting an entry. The user must type a reason before the
+// Submit button turns on. Reports reach the admin panel for review.
 struct ReportEntryView: View {
     let entryId: String
     @Environment(\.dismiss) var dismiss
@@ -238,6 +295,7 @@ struct ReportEntryView: View {
         }
     }
     
+    // Sends the report to the server and closes the sheet when it succeeds.
     private func submitReport() async {
         isSubmitting = true
         
@@ -252,4 +310,3 @@ struct ReportEntryView: View {
         isSubmitting = false
     }
 }
-

@@ -4,6 +4,9 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The data and logic for one artist's profile page: the profile,
+//  their tracks (loaded page by page) and the follow button.
+//
 
 import Foundation
 import Combine
@@ -19,12 +22,15 @@ class ArtistProfileViewModel: ObservableObject {
     @Published var hasMoreTracks = true
     
     // Mutable state for follow status and count
+    // Follow state and count live here so the button and the number update the moment the user
+    // taps.
     @Published var isFollowing: Bool = false
     @Published var followersCount: Int = 0
     
     private let apiService = APIService.shared
     private let pageSize = 20
     
+    // Loads the profile, copies its follow state, then loads the first page of tracks.
     func loadArtistProfile(artistId: String) async {
         isLoading = true
         errorMessage = nil
@@ -43,6 +49,7 @@ class ArtistProfileViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Page 1 replaces the track list. Later pages are added to the end.
     func loadTracks(artistId: String, page: Int = 1) async {
         guard !isLoadingTracks else { return }
         
@@ -66,11 +73,14 @@ class ArtistProfileViewModel: ObservableObject {
         isLoadingTracks = false
     }
     
+    // Loads the next page when the user scrolls to the end.
     func loadMoreTracks(artistId: String) async {
         guard hasMoreTracks && !isLoadingTracks else { return }
         await loadTracks(artistId: artistId, page: currentPage + 1)
     }
     
+    // Follows or unfollows. The follower count changes only after the server accepts the
+    // change.
     func toggleFollow(artistId: String) async {
         guard artistProfile != nil else { return }
         

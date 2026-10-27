@@ -4,15 +4,23 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: A sign-up step where the user chooses their account type (Artist,
+//  Producer or Engineer) over the login background photo, then taps
+//  Continue.
+//
 
 import SwiftUI
 
 struct RoleSelectionView: View {
+    // These bindings are shared with the parent screen. Changing them here changes them there,
+    // which is how the choice is passed along.
     @Binding var selectedRole: String
     @Binding var showLogin: Bool // When true, show login options
     @Binding var isSignupMode: Bool // Track if we're in signup mode
     var onBack: (() -> Void)? = nil // Callback to go back to previous page
     
+    // The choices as (server value, label, icon). Journalists are invite-only, so they are not
+    // listed.
     let roles = [
         ("ARTIST", "Artist", "music.note"),
         ("PRODUCER", "Producer", "slider.horizontal.3"),
@@ -23,6 +31,8 @@ struct RoleSelectionView: View {
     var body: some View {
         ZStack {
             // Background Image - sized perfectly for any iPhone screen, edge-to-edge
+            // The photo behind the screen, stretched edge to edge with a dark layer on top so
+            // the white text stays readable.
             Image("loginBackground")
                 .resizable()
                 .scaledToFill()
@@ -35,6 +45,8 @@ struct RoleSelectionView: View {
                         .ignoresSafeArea(.all)
                 )
                 
+            // Reads the screen size so text and spacing scale to fit different iPhones. The
+            // min(...) calls cap how big things can get.
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     // Back button at the top
@@ -80,6 +92,8 @@ struct RoleSelectionView: View {
                         .padding(.bottom, min(geometry.size.height * 0.03, 30))
                     
                     VStack(spacing: min(geometry.size.height * 0.02, 16)) {
+                        // Draws one tappable row for each account type. The selected one gets a
+                        // checkmark and a blue outline.
                         ForEach(roles, id: \.0) { role in
                             Button(action: {
                                 selectedRole = role.0
@@ -149,6 +163,7 @@ struct RoleSelectionView: View {
                 }
             }
         }
+        // Hides the system navigation bar. This screen provides its own Back button.
         .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
     }

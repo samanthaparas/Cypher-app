@@ -4,9 +4,14 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Shapes of an artist's public profile page and of following other
+//  artists.
+//
 
 import Foundation
 
+// Everything the profile screen shows: name, bio, city, social links, follower and track
+// counts, and the tracks themselves.
 struct ArtistProfile: Codable, Identifiable {
     let id: String
     let name: String
@@ -45,21 +50,25 @@ struct ArtistProfile: Codable, Identifiable {
     }
 }
 
+// A page of one artist's tracks.
 struct ArtistTracksResponse: Codable {
     let tracks: [Track]
     let pagination: Pagination
 }
 
+// The server's confirmation after following or unfollowing an artist.
 struct FollowResponse: Codable {
     let message: String
     let artistId: String
 }
 
+// A page of the people who follow an artist.
 struct FollowersResponse: Codable {
     let followers: [Follower]
     let pagination: Pagination
 }
 
+// One follower and when they followed.
 struct Follower: Codable, Identifiable {
     let id: String
     let email: String

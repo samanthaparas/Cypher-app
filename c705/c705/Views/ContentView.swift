@@ -4,10 +4,15 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: A leftover from Xcode's starter template (a simple list of
+//  timestamps). Nothing in the app opens it, so it can be deleted
+//  along with Models/Item.swift.
+//
 
 import SwiftUI
 import SwiftData
 
+// The app's real first screen is LoginView, not this one.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]

@@ -4,16 +4,26 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The first screen of the app. It shows the login photo with Apple
+//  and email sign-in, and switches to the main app once someone is
+//  signed in. This file also holds EmailLoginView, the email and
+//  password form used for both login and sign-up.
+//
 
 import SwiftUI
 
+// The app's entry screen, shown by c705App. It owns the sign-in screens and hands over to
+// MainTabView after login.
 struct LoginView: View {
     @StateObject private var viewModel = AuthViewModel()
     @EnvironmentObject var authService: AuthService
+    // Whether the account-type step is showing.
     @State private var showRoleSelection = false // Start with login/signup screen, not role selection
     @State private var selectedRole = "ARTIST"
     @State private var isLoading = false
     @State private var errorMessage: String?
+    // False means logging in, and true means creating an account. The same form is used for
+    // both.
     @State private var isSignupMode = false // Track if we're in signup mode
     @State private var showAccountTypeSelection = false
     
@@ -22,6 +32,9 @@ struct LoginView: View {
         // ViewModel will be set up in onAppear
     }
     
+    // Picks one of three screens: the main app if signed in, the account-type screen if one is
+    // still needed, or the login screen. On appear it tries auto-login and checks for the
+    // account-type flag.
     var body: some View {
         Group {
             if authService.isAuthenticated {
@@ -34,6 +47,8 @@ struct LoginView: View {
                 loginContent
                     // The photo and overlay are dark, so use light status bar text.
                     // Black time/battery was unreadable on top of his dark hair.
+                    // Makes the status bar text (time, battery) light so it can be read over
+                    // the dark photo.
                     .preferredColorScheme(.dark)
                     .onAppear {
                         // Set the shared AuthService in the view model
@@ -51,6 +66,8 @@ struct LoginView: View {
         }
     }
     
+    // The login screen: the photo, the C705 title, the Sign in with Apple button, the email
+    // button and the sign-up link. Choosing sign-up shows the account-type step first.
     private var loginContent: some View {
         GeometryReader { geometry in
             ZStack {
@@ -234,6 +251,7 @@ struct LoginView: View {
         .animation(AppAnimations.smoothSpring, value: showRoleSelection)
         .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
+        // Slides up the email login form when the user chooses Log in with Email.
         .sheet(isPresented: Binding(
             get: { viewModel.showEmailLogin && !isSignupMode },
             set: { viewModel.showEmailLogin = $0 }
@@ -252,6 +270,8 @@ struct LoginView: View {
         }
     }
     
+    // Runs the Apple sign-in sheet, then sends the result to AuthService. No account type is
+    // sent, because new Apple users choose one on the next screen. Cancelling shows no error.
     private func handleAppleSignIn() async {
         isLoading = true
         errorMessage = nil
@@ -320,6 +340,7 @@ struct LoginView: View {
         isLoading = false
     }
     
+    // Picks the icon for each account type.
     private func getRoleIcon(_ role: String) -> String {
         switch role {
         case "ARTIST": return "music.note"
@@ -330,6 +351,7 @@ struct LoginView: View {
         }
     }
     
+    // Turns the server's account type (like ARTIST) into a label to show.
     private func getRoleName(_ role: String) -> String {
         switch role {
         case "ARTIST": return "Artist"
@@ -341,19 +363,24 @@ struct LoginView: View {
     }
 }
 
+// The email form. In sign-up mode it also shows username, confirm password and an optional
+// journalist access code.
 struct EmailLoginView: View {
     @ObservedObject var viewModel: AuthViewModel
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authService: AuthService
+    // Tracks which text box is active, so pressing Return can jump to the next one.
     @FocusState private var focusedField: Field?
     @State private var showJournalistAccessCode = false
     @State private var journalistAccessCode = ""
     var onCancel: (() -> Void)? = nil
     
+    // The names of the form's text boxes, used with focusedField.
     enum Field {
         case username, email, password, confirmPassword, accessCode
     }
     
+    // Draws the photo, then a Cancel button and the form fields over it.
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -505,6 +532,8 @@ struct EmailLoginView: View {
                                 }
                             }
                             
+                            // One button for both modes: it signs up or logs in depending on
+                            // isSignupMode, after dismissing the keyboard.
                             Button(viewModel.isSignupMode ? "Sign Up" : "Login") {
                                 // Dismiss keyboard before submitting
                                 focusedField = nil
