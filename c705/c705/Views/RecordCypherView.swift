@@ -75,7 +75,7 @@ struct RecordCypherView: View {
                         
                         Text(timeString(recorder.recordingTime))
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                         
                         Text("Max: 60 seconds")
                             .font(.caption)
@@ -94,7 +94,7 @@ struct RecordCypherView: View {
                         
                         Text("Ready to Record")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                     }
                 }
                 .padding(.top, 40)
@@ -178,6 +178,7 @@ struct RecordCypherView: View {
                 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Record Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

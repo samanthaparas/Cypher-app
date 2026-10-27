@@ -174,7 +174,7 @@ struct CreateCypherView: View {
                                                     }
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 12)
-                                                    .background(Color(.systemBackground))
+                                                    .background(Theme.card)
                                                 }
                                                 .buttonStyle(PlainButtonStyle())
                                                 
@@ -187,7 +187,7 @@ struct CreateCypherView: View {
                                     }
                                     .frame(maxHeight: 300)
                                 }
-                                .background(Color(.systemBackground))
+                                .background(Theme.card)
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
                                 .padding(.top, 8)
@@ -305,7 +305,7 @@ struct CreateCypherView: View {
                                     .frame(maxHeight: 300)
                                 }
                             }
-                            .background(Color(.systemBackground))
+                            .background(Theme.card)
                             .cornerRadius(12)
                             .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                             .padding(.top, 8)
@@ -389,6 +389,7 @@ struct CreateCypherView: View {
                 }
                 .padding(.vertical, 20)
             }
+            .themedScreen()
             .navigationTitle("Create Cypher")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -743,6 +744,7 @@ struct RecordOverBeatView: View {
                 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Record Over Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

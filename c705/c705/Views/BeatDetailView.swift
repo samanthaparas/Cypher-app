@@ -40,7 +40,7 @@ struct BeatDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(beat.title)
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                     
                     if let producer = beat.producer {
                         Text("by \(producer.username ?? producer.email)")
@@ -55,7 +55,7 @@ struct BeatDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Preview")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                         .padding(.horizontal)
                     
                     // Preview player placeholder
@@ -72,7 +72,7 @@ struct BeatDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("20-30 second preview")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.black)
+                                .foregroundColor(Theme.textPrimary)
                             Text("Tap to play preview")
                                 .font(.system(size: 12))
                                 .foregroundColor(.gray)
@@ -81,7 +81,7 @@ struct BeatDetailView: View {
                         Spacer()
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Theme.card)
                     .cornerRadius(12)
                     .padding(.horizontal)
                 }
@@ -133,7 +133,7 @@ struct BeatDetailView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Full Beat")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Theme.textPrimary)
                                 
                                 HStack {
                                     Button(action: {
@@ -148,7 +148,7 @@ struct BeatDetailView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Full version unlocked")
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(Theme.textPrimary)
                                         Text("Tap to play full beat")
                                             .font(.system(size: 12))
                                             .foregroundColor(.gray)
@@ -200,6 +200,7 @@ struct BeatDetailView: View {
             }
             .padding(.bottom, 40)
         }
+        .themedScreen()
         .navigationTitle("Beat Details")
         .navigationBarTitleDisplayMode(.inline)
         // Slides up the purchase screen.
@@ -254,7 +255,7 @@ struct DetailRow: View {
             Spacer()
             Text(value)
                 .font(.system(size: 14))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }
@@ -274,7 +275,7 @@ struct PurchaseBeatView: View {
                 VStack(spacing: 12) {
                     Text(beat.title)
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                     
                     Text(formatPrice(beat.price))
                         .font(.system(size: 32, weight: .bold))
@@ -285,14 +286,14 @@ struct PurchaseBeatView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("What you get:")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                     
                     FeatureRow(text: "Full beat download")
                     FeatureRow(text: "Lease license (non-exclusive)")
                     FeatureRow(text: "High-quality audio file")
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .background(Theme.card)
                 .cornerRadius(12)
                 .padding(.horizontal)
                 
@@ -330,6 +331,7 @@ struct PurchaseBeatView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 20)
             }
+            .themedScreen()
             .navigationTitle("Purchase Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -394,7 +396,7 @@ struct FeatureRow: View {
                 .foregroundColor(.green)
             Text(text)
                 .font(.system(size: 14))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }
@@ -417,6 +419,7 @@ struct ReportBeatView: View {
                         .frame(minHeight: 100)
                 }
             }
+            .themedScreen()
             .navigationTitle("Report Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -61,6 +61,10 @@ struct MainTabView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             CypherTabBar(selectedTab: $selectedTab)
         }
+        // The whole signed-in app uses the mockup's dark look, so system text, lists, sheets and
+        // keyboards all turn dark, and buttons and links use the electric blue accent.
+        .preferredColorScheme(.dark)
+        .tint(Theme.accent)
     }
 }
 

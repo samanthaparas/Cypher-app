@@ -140,6 +140,7 @@ struct UploadBeatView: View {
                     .disabled(title.isEmpty || selectedFile == nil || isUploading)
                 }
             }
+            .themedScreen()
             .navigationTitle("Upload Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
