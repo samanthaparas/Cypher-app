@@ -4,19 +4,33 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The Arena tab (the Cypher hub): a search box, Top and All labels, a
+//  Create Cypher button, a banner about the top cypher near you, and
+//  the Popular Cyphers list. This file also holds the popular card, a
+//  card for trending lists, and the LocationManager that works out the
+//  user's city.
+//
 
 import SwiftUI
 import CoreLocation
 import Combine
 import MapKit
 
+// The Arena screen. Its data comes from CypherHubViewModel, which is passed in from
+// MainTabView.
 struct CypherHubView: View {
     @ObservedObject var viewModel: CypherHubViewModel
     @State private var selectedCypherId: String?
+    // The invite to show in the invite sheet. Nothing sets it at the moment, so that sheet
+    // never opens.
     @State private var selectedInvite: CypherInvite?
     @State private var searchText = ""
+    // Only changes how the Top and All labels look. The content below does not change with it
+    // yet.
     @State private var selectedTab = "Top"
     @State private var showCreateCypher = false
+    // Creating the LocationManager asks for location permission right away, which is why the
+    // iOS prompt appears as soon as the Arena opens.
     @StateObject private var locationManager = LocationManager()
     @State private var topCypherAnnouncement: TopCypherAnnouncement?
     @State private var announcementUpdateTimer: Timer?
@@ -24,6 +38,7 @@ struct CypherHubView: View {
     
     let tabs = ["Top", "All"]
     
+    // The facts shown in the banner (who, which city, which cypher).
     struct TopCypherAnnouncement {
         let username: String
         let city: String
@@ -194,6 +209,7 @@ struct CypherHubView: View {
             .padding(.bottom, 20)
         }
         .navigationTitle("Cypher")
+        // Pull down to reload the cyphers and update the banner.
         .refreshable {
             // Allow refresh to reload cyphers
             await viewModel.loadCyphers()
@@ -202,18 +218,24 @@ struct CypherHubView: View {
                 await updateTopCypherAnnouncement()
             }
         }
+        // Shows the invite sheet for the chosen invite, so the user can accept or decline.
         .sheet(item: $selectedInvite) { invite in
             CypherInviteDetailView(invite: invite, viewModel: viewModel)
         }
+        // Opens a cypher full screen when selectedCypherId is set, for example by tapping a
+        // card or the banner.
         .fullScreenCover(item: Binding(
             get: { selectedCypherId.map { CypherNavigation(id: $0) } },
             set: { selectedCypherId = $0?.id }
         )) { nav in
             CypherDetailView(cypherId: nav.id)
         }
+        // Slides up the Create Cypher form.
         .sheet(isPresented: $showCreateCypher) {
             CreateCypherView()
         }
+        // Runs once when the screen first appears: loads the cyphers and then works out the
+        // banner text.
         .task {
             // Only load once when view first appears if we don't have data and haven't loaded yet
             guard !hasLoadedInitially else { return }
@@ -226,6 +248,8 @@ struct CypherHubView: View {
             await viewModel.loadCyphers()
             await updateTopCypherAnnouncement()
         }
+        // Starts a timer that refreshes the banner every 60 seconds while the screen is
+        // showing.
         .onAppear {
             // Only set up timer if it doesn't already exist
             if announcementUpdateTimer == nil {
@@ -247,6 +271,8 @@ struct CypherHubView: View {
     
     // MARK: - Top Cypher Announcement Logic
     
+    // Picks the cypher with the most entries plus votes, preferring one that mentions the
+    // user's city, and builds the banner from it. With no cyphers, the banner is cleared.
     private func updateTopCypherAnnouncement() async {
         // Only update if we have cyphers loaded
         // Don't recursively call loadCyphers - let refreshable handle that
@@ -334,6 +360,8 @@ struct CypherHubView: View {
     }
     
     // Helper function to add timeout to async operations
+    // Runs a task but gives up after a few seconds, so finding the user's city can never hold
+    // the screen up.
     private func withTimeout<T>(seconds: TimeInterval, operation: @escaping () async -> T) async -> T? {
         return await withTaskGroup(of: T?.self) { group in
             group.addTask {
@@ -351,6 +379,8 @@ struct CypherHubView: View {
         }
     }
     
+    // Looks for a known city name in the cypher's title or description. The server has no city
+    // field, so this is a guess from the text.
     private func extractCity(from cypher: TopCypher) -> String? {
         let searchText = (cypher.description ?? "") + " " + cypher.title
         
@@ -376,11 +406,13 @@ struct CypherHubView: View {
 }
 
 // Helper struct for navigation
+// A tiny wrapper so a cypher's id can be used to present a full-screen cover.
 struct CypherNavigation: Identifiable {
     let id: String
 }
 
 // Popular Cypher Card View matching the design
+// One card in the Popular Cyphers list: rank, title, host, vote count and a Join button.
 struct PopularCypherCardView: View {
     let cypher: TopCypher
     let rank: Int
@@ -481,6 +513,7 @@ struct PopularCypherCardView: View {
         return "Baltimore" // Default
     }
     
+    // Shortens big numbers: 1250 becomes 1.3K.
     private func formatVotes(_ votes: Int) -> String {
         if votes >= 1000 {
             return String(format: "%.1fK", Double(votes) / 1000.0)
@@ -490,6 +523,9 @@ struct PopularCypherCardView: View {
 }
 
 // MARK: - Location Manager
+// Finds the user's city using iOS location services. It asks for permission when it is created,
+// then looks up a city name from the coordinates. If location is denied, the city stays empty
+// and the app carries on.
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var currentCity: String = ""
@@ -502,6 +538,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         requestLocationPermission()
     }
     
+    // Shows the iOS permission prompt if the user has not decided yet. If already allowed, it
+    // starts finding the location.
     func requestLocationPermission() {
         switch locationManager.authorizationStatus {
         case .notDetermined:
@@ -670,6 +708,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    // Returns the city if it is already known, or waits a few seconds for it. An empty result
+    // means the city is unknown.
     func getCurrentCity() async -> String {
         // Return immediately if we already have the city
         if !currentCity.isEmpty {
@@ -709,6 +749,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 // Legacy card view kept for compatibility
+// A simple cypher card, used by the Trending list on Home.
 struct CypherCardView: View {
     let cypher: Cypher
     let onTap: () -> Void
@@ -775,6 +816,7 @@ struct CypherCardView: View {
         }
     }
     
+    // Shows how long is left, such as 2d 5h left, or Ended.
     func timeRemaining(_ endDate: String) -> String {
         let formatter = ISO8601DateFormatter()
         guard let date = formatter.date(from: endDate) else {

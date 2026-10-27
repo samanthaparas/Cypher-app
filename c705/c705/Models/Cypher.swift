@@ -4,25 +4,34 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: All the data shapes for cyphers: a cypher, its entries, votes, the
+//  leaderboard, the top-cyphers list and invites. These must match
+//  what the backend sends, field for field.
+//
 
 import Foundation
 
+// The kind of cypher. The text in quotes is exactly what the server sends and expects.
 enum CypherType: String, Codable {
     case open = "OPEN"
     case competitive = "COMPETITIVE"
     case beatLocked = "BEAT_LOCKED"
 }
 
+// Who can see a cypher: everyone (public) or only people who were invited.
 enum CypherVisibility: String, Codable {
     case `public` = "PUBLIC"
     case inviteOnly = "INVITE_ONLY"
 }
 
+// Whether a cypher is still taking entries.
 enum CypherStatus: String, Codable {
     case open = "OPEN"
     case closed = "CLOSED"
 }
 
+// One cypher as shown in lists. entryCount is read from a nested _count field in the server's
+// JSON.
 struct Cypher: Codable, Identifiable {
     let id: String
     let title: String
@@ -52,6 +61,8 @@ struct Cypher: Codable, Identifiable {
         let entries: Int
     }
     
+    // Decoding by hand, because entryCount does not sit at the top level of the JSON. try?
+    // means a missing _count just becomes nil instead of an error.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -72,6 +83,7 @@ struct Cypher: Codable, Identifiable {
         }
     }
     
+    // The reverse: turn the cypher back into JSON, putting entryCount back inside _count.
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -92,6 +104,7 @@ struct Cypher: Codable, Identifiable {
     }
 }
 
+// A page of cyphers plus paging numbers.
 struct CypherResponse: Codable {
     let cyphers: [Cypher]
     let total: Int
@@ -100,6 +113,8 @@ struct CypherResponse: Codable {
     let totalPages: Int
 }
 
+// One artist's recording inside a cypher. audioUrl is the sound file, averageScore the current
+// rating, and voteCount how many people voted.
 struct CypherEntry: Codable, Identifiable {
     let id: String
     let cypherId: String
@@ -118,6 +133,7 @@ struct CypherEntry: Codable, Identifiable {
     }
 }
 
+// A page of entries plus paging numbers.
 struct CypherEntriesResponse: Codable {
     let entries: [CypherEntry]
     let total: Int
@@ -126,6 +142,8 @@ struct CypherEntriesResponse: Codable {
     let totalPages: Int
 }
 
+// A full cypher with all of its entries, shown on the cypher's detail screen. userEntry is the
+// signed-in user's own entry, if they posted one.
 struct CypherDetail: Codable {
     let id: String
     let title: String
@@ -140,17 +158,20 @@ struct CypherDetail: Codable {
     let userEntry: CypherEntry?
 }
 
+// One entry together with its rank on the leaderboard.
 struct LeaderboardEntry: Codable {
     let rank: Int
     let entry: CypherEntry
 }
 
+// What the app sends when someone votes: a 1 to 5 score for each of Bars, Flow and Creativity.
 struct VoteRequest: Codable {
     let bars: Int
     let flow: Int
     let creativity: Int
 }
 
+// The server's reply after a vote, with the entry's new average score and vote count.
 struct VoteResponse: Codable {
     let message: String
     let averageScore: Double
@@ -159,6 +180,8 @@ struct VoteResponse: Codable {
 
 // MARK: - Top Cyphers
 
+// A cypher in the Popular list, with engagement numbers the server worked out (entries, votes,
+// artists, score).
 struct TopCypher: Codable, Identifiable {
     let id: String
     let title: String
@@ -180,12 +203,14 @@ struct TopCypher: Codable, Identifiable {
     }
 }
 
+// A wrapper around the list of top cyphers.
 struct TopCyphersResponse: Codable {
     let cyphers: [TopCypher]
 }
 
 // MARK: - Cypher Invites
 
+// An invitation to join a cypher. status is pending, accepted or declined.
 struct CypherInvite: Codable, Identifiable {
     let id: String
     let cypherId: String
@@ -217,10 +242,12 @@ struct CypherInvite: Codable, Identifiable {
     }
 }
 
+// What the app sends to invite someone to a cypher.
 struct InviteArtistRequest: Codable {
     let artistId: String
 }
 
+// What the app sends to accept or decline an invite.
 struct RespondToInviteRequest: Codable {
     let response: String // "accepted" or "declined"
 }

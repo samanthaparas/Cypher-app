@@ -4,10 +4,17 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Two audio player controls for tracks: a full player (progress bar,
+//  stop, play and pause) and a compact one-line player for lists. Both
+//  play through the app's shared AudioPlayerService.
+//
 
 import SwiftUI
 
+// The full player. It starts playing its track as soon as it appears.
 struct AudioPlayerView: View {
+    // A view model that talks to the shared player. Several views can have their own while the
+    // sound itself stays shared.
     @StateObject private var viewModel = AudioPlayerViewModel()
     let track: Track
     
@@ -29,6 +36,7 @@ struct AudioPlayerView: View {
             
             // Progress Bar
             VStack(spacing: 4) {
+                // A bar that fills from 0 to 1 as the track plays.
                 ProgressView(value: viewModel.progress)
                     .progressViewStyle(LinearProgressViewStyle())
                 
@@ -92,6 +100,7 @@ struct AudioPlayerView: View {
         .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(radius: 8)
+        // When the player appears, start loading and playing the track.
         .onAppear {
             Task {
                 await viewModel.playTrack(track)
@@ -102,6 +111,8 @@ struct AudioPlayerView: View {
 
 // MARK: - Compact Player View (for feed)
 
+// A small one-row player for lists such as the feed. The track id is compared with the loaded
+// track so only the right row shows pause.
 struct CompactAudioPlayerView: View {
     @StateObject private var viewModel = AudioPlayerViewModel()
     let track: Track

@@ -4,6 +4,9 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The data and logic for one cypher's detail screen: the cypher
+//  itself, its entries, the leaderboard, and sending votes.
+//
 
 import Foundation
 import Combine
@@ -18,12 +21,14 @@ class CypherDetailViewModel: ObservableObject {
     @Published var isLoadingLeaderboard = false
     @Published var errorMessage: String?
     
+    // The signed-in user's own entry in this cypher, if they have posted one.
     var userEntry: CypherEntry? {
         cypher?.userEntry
     }
     
     private let apiService = APIService.shared
     
+    // Loads the cypher's details.
     func loadCypher(id: String) async {
         isLoading = true
         errorMessage = nil
@@ -39,6 +44,7 @@ class CypherDetailViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Loads up to 100 entries for the cypher.
     func loadEntries(cypherId: String) async {
         isLoadingEntries = true
         
@@ -53,6 +59,7 @@ class CypherDetailViewModel: ObservableObject {
         isLoadingEntries = false
     }
     
+    // Loads the ranked list of entries.
     func loadLeaderboard(cypherId: String) async {
         isLoadingLeaderboard = true
         
@@ -66,6 +73,7 @@ class CypherDetailViewModel: ObservableObject {
         isLoadingLeaderboard = false
     }
     
+    // Sends a vote, then reloads the entries so the new scores show.
     func voteEntry(entryId: String, bars: Int, flow: Int, creativity: Int) async {
         do {
             let _ = try await apiService.voteCypherEntry(entryId: entryId, bars: bars, flow: flow, creativity: creativity)

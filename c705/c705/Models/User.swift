@@ -4,9 +4,13 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The app's user type, used for signed-in users and for people shown
+//  in lists.
+//
 
 import Foundation
 
+// One person. username is optional because the server does not always send one.
 struct AppUser: Codable, Identifiable {
     let id: String
     let email: String
@@ -20,6 +24,7 @@ struct AppUser: Codable, Identifiable {
         case username
     }
     
+    // Encoding means turning this user back into JSON, for example to save it.
     // Custom encoding
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -30,6 +35,7 @@ struct AppUser: Codable, Identifiable {
     }
     
     // Make username optional for decoding - handle missing username gracefully
+    // Decoding by hand lets the app accept a missing or null username instead of failing.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -42,5 +48,6 @@ struct AppUser: Codable, Identifiable {
 }
 
 // Typealias for backward compatibility with API responses
+// An alias is a second name for the same type, so older code that says User keeps working.
 typealias User = AppUser
 

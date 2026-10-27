@@ -4,20 +4,28 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The recording screen for a cypher entry. The user gives it an
+//  optional title, taps Record, gets a 3-2-1 countdown, records up to
+//  60 seconds, then submits the entry to the server.
+//
 
 import SwiftUI
 import AVFoundation
 
+// Opened from a cypher's Details tab. It is told which cypher the entry belongs to.
 struct RecordCypherView: View {
     let cypherId: String
     let cypher: CypherDetail?
     @Environment(\.dismiss) var dismiss
+    // The app's shared microphone recorder. The screen redraws as it records and its timer
+    // ticks.
     @StateObject private var recorder = AudioRecorderService.shared
     @State private var isUploading = false
     @State private var uploadProgress: Double = 0
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var entryTitle = ""
+    // Whether the 3-2-1 countdown is showing, and the number currently displayed.
     @State private var showCountdown = false
     @State private var countdownValue = 3
     
@@ -28,6 +36,8 @@ struct RecordCypherView: View {
             VStack(spacing: 24) {
                 // Recording Status
                 VStack(spacing: 16) {
+                    // The screen shows one of three things: the countdown, the recording
+                    // indicator, or the ready-to-record state.
                     if showCountdown {
                         // Countdown View
                         ZStack {
@@ -183,6 +193,8 @@ struct RecordCypherView: View {
             } message: {
                 Text(errorMessage)
             }
+            // When the screen opens, ask for microphone permission if it has not been given. An
+            // error is shown if the user says no.
             .task {
                 if !recorder.hasPermission {
                     let granted = await recorder.requestPermission()
@@ -201,6 +213,7 @@ struct RecordCypherView: View {
         return String(format: "%d:%02d", minutes, seconds)
     }
     
+    // Counts down from 3, one number per second, then starts recording by itself.
     private func startCountdown() {
         showCountdown = true
         countdownValue = 3
@@ -223,6 +236,8 @@ struct RecordCypherView: View {
         }
     }
     
+    // Reads the recording file, uploads it as the cypher entry with the title, deletes the
+    // local file and closes the screen. If it fails, an error message appears.
     private func uploadRecording(audioURL: URL) async {
         isUploading = true
         uploadProgress = 0

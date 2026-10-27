@@ -4,14 +4,23 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The signed-in user's own profile (name, account type, bio, and
+//  Articles, Beats and Cyphers tabs) plus the Settings screens reached
+//  from its gear button. It is a very large file: the profile is
+//  first, then the small views it uses, then Settings, Delete Account,
+//  and several placeholder sub-pages.
+//
 
 import SwiftUI
 import SafariServices
 
 
+// The profile screen. It works as a tab in the main bar and also as a sheet from Home, which is
+// why the back button is optional.
 struct ProfileView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) var dismiss
+    // Which of the three profile tabs is open.
     @State private var selectedTab: String
     @State private var showEditBio = false
     @State private var showEditUsername = false
@@ -33,6 +42,8 @@ struct ProfileView: View {
     let showsBackButton: Bool
 
     // Initialize selectedTab based on user role
+    // Starts on the Articles tab. The user's role is not known yet at this point, so onAppear
+    // adjusts the tab later.
     init(showsBackButton: Bool = true) {
         self.showsBackButton = showsBackButton
         // We'll set this in onAppear since we need access to authService
@@ -69,6 +80,8 @@ struct ProfileView: View {
         return role.capitalized
     }
     
+    // Draws the profile: the avatar, username with an edit button, account type, bio, the tab
+    // buttons and the content for the selected tab.
     var body: some View {
         NavigationView {
             ScrollView {
@@ -235,9 +248,11 @@ struct ProfileView: View {
                     }
                 }
             }
+            // Slides up the screen to edit the bio.
             .sheet(isPresented: $showEditBio) {
                 EditBioView(bioText: $bioText)
             }
+            // Slides up the screen to change the username.
             .sheet(isPresented: $showEditUsername) {
                 EditUsernameSheet(
                     username: $editUsernameText,
@@ -248,12 +263,15 @@ struct ProfileView: View {
                 )
                 .environmentObject(authService)
             }
+            // Slides up the Settings screen from the gear button.
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService, showEditBio: $showEditBio)
             }
+            // Slides up the screen for importing a beat.
             .sheet(isPresented: $showImportSheet) {
                 ImportBeatView(importedBeats: $importedBeats)
             }
+            // When the profile opens: pick the first tab and load the data that tab needs.
             .onAppear {
                 // Set initial tab - default to Articles for all account types except ADMIN
                 if authService.currentUser?.role == "ADMIN" {
@@ -268,6 +286,7 @@ struct ProfileView: View {
                     loadCypherInvites()
                 }
             }
+            // Loads beats or cypher invites the first time their tab is opened.
             .onChange(of: selectedTab) { oldValue, newTab in
                 if newTab == "Beats" {
                     // All account types can load beats
@@ -276,12 +295,15 @@ struct ProfileView: View {
                     loadCypherInvites()
                 }
             }
+            // Opens the Arena full screen, for example after tapping a cypher invite.
             .fullScreenCover(isPresented: $showCypherPage) {
                 FreestyleArenaView()
             }
         }
     }
 
+    // Checks the new username (at least 2 characters), sends it to the server, and saves the
+    // fresh login token and user. A taken username shows a clear message.
     private func saveUsername() async {
         let trimmed = editUsernameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else {
@@ -314,6 +336,8 @@ struct ProfileView: View {
         await MainActor.run { isUpdatingUsername = false }
     }
     
+    // Loads the beats the user bought from the server, plus beats they imported, which are
+    // remembered on the phone.
     func loadBeats() {
         isLoadingBeats = true
         
@@ -344,12 +368,14 @@ struct ProfileView: View {
         }
     }
     
+    // Reads the server's date text, with or without fractions of a second.
     private func parseDate(_ dateString: String) -> Date? {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter.date(from: dateString) ?? formatter.date(from: dateString.replacingOccurrences(of: "\\.\\d+", with: "", options: .regularExpression))
     }
     
+    // Loads the cypher invites the user has received, for the Cyphers tab.
     func loadCypherInvites() {
         isLoadingCyphers = true
         
@@ -373,6 +399,7 @@ struct ProfileView: View {
 // MARK: - Cypher Invite Model (moved to Cypher.swift)
 // Using CypherInvite from Models/Cypher.swift
 
+// The Cyphers tab content: the user's cypher invites, or an empty message.
 // MARK: - Cyphers Section View
 struct CyphersSectionView: View {
     @Binding var invites: [CypherInvite]
@@ -418,6 +445,7 @@ struct CyphersSectionView: View {
     }
 }
 
+// One invite as a tappable row.
 // MARK: - Cypher Invite Row View
 struct CypherInviteRowView: View {
     let invite: CypherInvite
@@ -500,6 +528,7 @@ struct CypherInviteRowView: View {
     }
 }
 
+// One tab label with an underline when selected. CypherDetailView uses it too.
 struct TabButton: View {
     let title: String
     let isSelected: Bool
@@ -524,6 +553,8 @@ struct TabButton: View {
 }
 
 // Beat model for purchased/imported beats in ProfileView
+// A simple beat record for the profile and the Create Cypher form. It can come from a purchase
+// (with a server link) or from a file imported on the phone.
 struct ProfileBeat: Identifiable, Codable {
     let id: String
     let title: String
@@ -558,6 +589,8 @@ struct ProfileBeat: Identifiable, Codable {
     }
 }
 
+// The Beats tab content: the user's purchased and imported beats, with search and an import
+// button.
 struct BeatsSectionView: View {
     @Binding var searchText: String
     @Binding var purchasedBeats: [ProfileBeat]
@@ -672,6 +705,7 @@ struct BeatsSectionView: View {
     }
 }
 
+// One beat in that list.
 struct BeatRowView: View {
     let beat: ProfileBeat
     
@@ -723,6 +757,8 @@ struct BeatRowView: View {
     }
 }
 
+// The import-a-beat screen. The Choose File button does not open the Files app yet. It adds a
+// sample beat named Imported Beat 1, 2 and so on, and saves the list on the phone.
 struct ImportBeatView: View {
     @Binding var importedBeats: [ProfileBeat]
     @Environment(\.dismiss) var dismiss
@@ -789,6 +825,7 @@ struct ImportBeatView: View {
     }
 }
 
+// The small form for changing the username, with an error line and a Save button.
 struct EditUsernameSheet: View {
     @Binding var username: String
     @Binding var errorMessage: String?
@@ -839,10 +876,14 @@ struct EditUsernameSheet: View {
     }
 }
 
+// The Settings list. It shows sections for every user (Account, Privacy, Notifications,
+// Playback, Legal) and extra sections for the user's account type.
 struct SettingsView: View {
     @ObservedObject var authService: AuthService
     @Binding var showEditBio: Bool
     @Environment(\.dismiss) var dismiss
+    // The settings values shown on screen. They start from defaults, because loading from the
+    // server is not built yet.
     @State private var settings = UserSettings()
     @State private var showDeleteAccount = false
     @State private var showChangeEmail = false
@@ -949,6 +990,9 @@ struct SettingsView: View {
         )
     }
     
+    // Helper bindings. Each one lets a control read and change a setting that might not exist
+    // yet: it reads a default if the setting is empty, and creates the setting when the user
+    // changes it.
     // MARK: - Producer Helper Bindings
     private var producerNameBinding: Binding<String> {
         Binding(
@@ -1247,6 +1291,8 @@ struct SettingsView: View {
         )
     }
     
+    // The role-specific sections, each in its own property so the big Settings list stays easy
+    // to read.
     // MARK: - Artist Settings Sections (extracted to reduce complexity)
     @ViewBuilder
     private var artistSettingsSections: some View {
@@ -1415,6 +1461,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
+                // Change email, change password, two-factor, sign out and delete account. The
+                // first three open Coming Soon screens.
                 // MARK: - Account Section (All Users)
                 Section(header: Text("Account")) {
                     Button(action: {
@@ -1450,6 +1498,7 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Private profile, who can comment or message, and blocked users.
                 // MARK: - Privacy & Safety (All Users)
                 Section(header: Text("Privacy & Safety")) {
                     Toggle(isOn: $settings.privacy.privateProfile) {
@@ -1477,6 +1526,8 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Toggles for which alerts the user wants. The app does not send push
+                // notifications yet, so these only save a preference.
                 // MARK: - Notifications (All Users)
                 Section(header: Text("Notifications")) {
                     Toggle(isOn: $settings.notifications.likes) {
@@ -1500,6 +1551,7 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Autoplay, mobile data use and audio quality.
                 // MARK: - Playback & Media (All Users)
                 Section(header: Text("Playback & Media")) {
                     Toggle(isOn: $settings.playback.autoplayNext) {
@@ -1544,6 +1596,8 @@ struct SettingsView: View {
                     journalistSettingsSection
                 }
                 
+                // Opens the Terms, Privacy Policy and Community Guidelines pages on the website
+                // inside the app, and shows the app version.
                 // MARK: - Legal & App Info (All Users)
                 Section(header: Text("Legal & App Info")) {
                     Button(action: {
@@ -1589,6 +1643,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            // Opens the Delete Account screen.
             .sheet(isPresented: $showDeleteAccount) {
                 DeleteAccountView(authService: authService) {
                     dismiss()
@@ -1615,6 +1670,8 @@ struct SettingsView: View {
         }
     }
     
+    // Meant to load the user's saved settings from the server. For now it only sets up defaults
+    // for the user's account type.
     private func loadSettings() {
         // TODO: Load settings from backend API
         // For now, initialize with defaults
@@ -1622,6 +1679,7 @@ struct SettingsView: View {
     }
 }
 
+// One row in the settings list: an icon and a title.
 // MARK: - Settings Row Component
 struct SettingsRow: View {
     let icon: String
@@ -1648,6 +1706,7 @@ struct SettingsRow: View {
     }
 }
 
+// Small pick-one screens for who can comment, who can message and audio quality.
 // MARK: - Placeholder Views for Settings Sub-pages
 struct CommentPermissionView: View {
     @Binding var permission: CommentPermission
@@ -1699,6 +1758,8 @@ struct AudioQualityView: View {
     }
 }
 
+// Apple requires an in-app way to delete an account. The user must type DELETE to turn the
+// button on, and the account is only signed out after the server has really deleted it.
 // MARK: - Delete Account View (App Store Requirement)
 struct DeleteAccountView: View {
     @ObservedObject var authService: AuthService
@@ -1790,6 +1851,7 @@ struct DeleteAccountView: View {
     }
 }
 
+// Screens for features that are not built yet. Most only show a Coming Soon message.
 // MARK: - Placeholder Views (to be implemented)
 struct ChangeEmailView: View {
     @Environment(\.dismiss) var dismiss
@@ -1876,6 +1938,7 @@ struct LegalDocumentView: View {
     }
 }
 
+// Stand-ins for the role-specific settings pages. Several show only a title.
 // MARK: - Role-Specific Settings Views (Placeholders)
 struct ArtistProfileSettingsView: View {
     @Binding var settings: ArtistSettings?
@@ -1964,6 +2027,7 @@ struct GenresView: View {
     }
 }
 
+// A text box for editing the bio.
 struct EditBioView: View {
     @Binding var bioText: String
     @Environment(\.dismiss) var dismiss
@@ -2002,6 +2066,8 @@ struct EditBioView: View {
 
 
 
+// Lets SwiftUI show a web page inside the app using Safari's own screen, for example the Terms
+// of Service.
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
 
@@ -2016,6 +2082,7 @@ struct SafariView: UIViewControllerRepresentable {
 
 
 
+// Gives every URL an id, which .sheet(item:) needs in order to present one.
 extension URL: Identifiable {
     public var id: String { absoluteString }
 }

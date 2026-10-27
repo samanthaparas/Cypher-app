@@ -4,11 +4,18 @@
 //
 //  Account type selection after Apple Sign In
 //
+//  PURPOSE: A screen where a user who has no account type yet chooses Artist,
+//  Producer or Engineer, and the choice is saved to the server. It
+//  uses the same login background photo as the sign-in screens.
+//
 
 import SwiftUI
 
+// Shown when a signed-in user still needs to pick their account type (the
+// needsAccountTypeSelection flag).
 struct AccountTypeSelectionView: View {
     @EnvironmentObject var authService: AuthService
+    // The card the user has tapped. Artist is pre-selected.
     @State private var selectedRole: String = "ARTIST"
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -120,6 +127,9 @@ struct AccountTypeSelectionView: View {
         }
     }
     
+    // Sends the chosen type to the server, which replies with a fresh login token and user.
+    // These are saved to the Keychain and to AuthService, and the "needs selection" flag is
+    // cleared. Errors become friendly messages.
     private func updateRole() async {
         isLoading = true
         errorMessage = nil
@@ -163,6 +173,8 @@ struct AccountTypeSelectionView: View {
     }
 }
 
+// One tappable card for an account type: icon, title, description, and a highlight when
+// selected.
 struct RoleSelectionCard: View {
     let role: String
     let title: String

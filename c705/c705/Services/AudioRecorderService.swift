@@ -4,11 +4,17 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The one microphone recorder the whole app shares. It asks for
+//  microphone permission, records up to 60 seconds to a file on the
+//  phone, and reports the time so screens can show it.
+//
 
 import Foundation
 import AVFoundation
 import Combine
 
+// @Published values below (recording or not, elapsed time, permission) redraw any screen
+// watching them, the same way the audio player does.
 class AudioRecorderService: NSObject, ObservableObject {
     static let shared = AudioRecorderService()
     
@@ -21,6 +27,7 @@ class AudioRecorderService: NSObject, ObservableObject {
     private var audioSession: AVAudioSession = AVAudioSession.sharedInstance()
     
     // Maximum recording length in seconds (60 seconds for cyphers)
+    // The longest a cypher entry can be. The recorder stops by itself when it is reached.
     let maxRecordingLength: TimeInterval = 60.0
     
     private override init() {
@@ -30,6 +37,8 @@ class AudioRecorderService: NSObject, ObservableObject {
     
     // MARK: - Permission Check
     
+    // Looks up whether the user already allowed microphone access. iOS 17 changed the way to
+    // ask, so there are two versions.
     func checkPermission() {
         if #available(iOS 17.0, *) {
             hasPermission = AVAudioApplication.shared.recordPermission == .granted
@@ -39,6 +48,7 @@ class AudioRecorderService: NSObject, ObservableObject {
         }
     }
     
+    // Shows the iOS pop-up asking to use the microphone and returns true if the user allows it.
     func requestPermission() async -> Bool {
         if #available(iOS 17.0, *) {
             return await AVAudioApplication.requestRecordPermission()
@@ -56,6 +66,8 @@ class AudioRecorderService: NSObject, ObservableObject {
     
     // MARK: - Recording
     
+    // Starts recording. It checks permission first, switches the audio session to record mode,
+    // and saves AAC audio (a compact format) to a new .m4a file in the app's documents folder.
     func startRecording() throws {
         guard hasPermission else {
             throw AudioRecorderError.permissionDenied
@@ -86,6 +98,8 @@ class AudioRecorderService: NSObject, ObservableObject {
         recordingTime = 0
         
         // Start timer
+        // Ticks every 0.1 seconds to update the elapsed time and to stop automatically at the
+        // maximum length.
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             self.recordingTime += 0.1
@@ -98,6 +112,8 @@ class AudioRecorderService: NSObject, ObservableObject {
     }
     
     @discardableResult
+    // Finishes the recording and returns where the file was saved. @discardableResult just
+    // means callers may ignore that return value.
     func stopRecording() -> URL? {
         guard let recorder = audioRecorder, isRecording else {
             return nil
@@ -118,6 +134,7 @@ class AudioRecorderService: NSObject, ObservableObject {
         return audioURL
     }
     
+    // Stops and deletes the recording, for when the user backs out.
     func cancelRecording() {
         guard let recorder = audioRecorder, isRecording else {
             return
@@ -139,6 +156,7 @@ class AudioRecorderService: NSObject, ObservableObject {
     
     // MARK: - Get Recording Data
     
+    // Reads the finished recording into memory so it can be uploaded.
     func getRecordingData() -> Data? {
         guard let recorder = audioRecorder, !isRecording else {
             return nil
@@ -158,6 +176,8 @@ class AudioRecorderService: NSObject, ObservableObject {
 
 // MARK: - AVAudioRecorderDelegate
 
+// A delegate is a helper that Apple's recorder calls back when something happens, such as an
+// error.
 extension AudioRecorderService: AVAudioRecorderDelegate {
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         if !flag {
@@ -174,6 +194,7 @@ extension AudioRecorderService: AVAudioRecorderDelegate {
 
 // MARK: - Errors
 
+// The error messages a user can see when recording fails.
 enum AudioRecorderError: LocalizedError {
     case permissionDenied
     case recordingFailed

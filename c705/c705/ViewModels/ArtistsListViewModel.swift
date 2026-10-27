@@ -4,6 +4,9 @@
 //
 //  Created for Artists list
 //
+//  PURPOSE: The data and logic for the list of artists, including searching and
+//  loading more pages.
+//
 
 import Foundation
 import Combine
@@ -18,8 +21,11 @@ class ArtistsListViewModel: ObservableObject {
     private var currentPage = 1
     private let pageLimit = 20
     private var hasMorePages = true
+    // The search text currently applied, used when loading each page.
     private var currentSearchQuery = ""
     
+    // Loads the next page of artists. The first page replaces the list, and later pages are
+    // added to it.
     func loadArtists() async {
         guard !isLoading && hasMorePages else { return }
         
@@ -49,6 +55,7 @@ class ArtistsListViewModel: ObservableObject {
         isLoading = false
     }
     
+    // Starts a fresh search: it resets to page 1, clears the list and loads again.
     func searchArtists(query: String) {
         currentSearchQuery = query
         currentPage = 1

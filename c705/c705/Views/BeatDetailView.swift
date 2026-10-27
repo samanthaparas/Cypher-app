@@ -4,19 +4,28 @@
 //
 //  Created for Beats feature
 //
+//  PURPOSE: The detail screen for one beat: its info, a preview player, a
+//  Purchase button, and a Report option. It also holds the purchase
+//  sheet and the report sheet. Playback and real purchasing are not
+//  finished yet (see the TODOs).
+//
 
 import SwiftUI
 import StoreKit
 
+// Opened from a beat card. It is given the Beat to show.
 struct BeatDetailView: View {
     let beat: Beat
     @EnvironmentObject var authService: AuthService
+    // Apple's in-app purchase helper. It is created here so the purchase sheet can use it.
     @StateObject private var iapManager = IAPManager()
     @State private var isPlaying = false
     @State private var showPurchaseSheet = false
     @State private var showReportSheet = false
     @State private var errorMessage: String?
     @State private var showError = false
+    // The link to the full-length beat. It stays empty until the server confirms this user owns
+    // the beat.
     @State private var fullBeatUrl: String?
     @State private var isLoadingFullBeat = false
     
@@ -193,9 +202,11 @@ struct BeatDetailView: View {
         }
         .navigationTitle("Beat Details")
         .navigationBarTitleDisplayMode(.inline)
+        // Slides up the purchase screen.
         .sheet(isPresented: $showPurchaseSheet) {
             PurchaseBeatView(beat: beat, iapManager: iapManager)
         }
+        // Slides up the form to report this beat.
         .sheet(isPresented: $showReportSheet) {
             ReportBeatView(beat: beat)
         }
@@ -206,11 +217,14 @@ struct BeatDetailView: View {
         }
     }
     
+    // Prices are stored in cents. This turns 999 into $9.99.
     private func formatPrice(_ cents: Int) -> String {
         let dollars = Double(cents) / 100.0
         return String(format: "$%.2f", dollars)
     }
     
+    // Asks the server for the full beat's link. The server only allows it if the user has
+    // bought the beat.
     private func loadFullBeat() async {
         isLoadingFullBeat = true
         errorMessage = nil
@@ -227,6 +241,7 @@ struct BeatDetailView: View {
     }
 }
 
+// One label and value line in the beat's details.
 struct DetailRow: View {
     let label: String
     let value: String
@@ -244,6 +259,7 @@ struct DetailRow: View {
     }
 }
 
+// The purchase sheet: shows the price and what the buyer gets, with a Buy button.
 struct PurchaseBeatView: View {
     let beat: Beat
     @ObservedObject var iapManager: IAPManager
@@ -331,11 +347,15 @@ struct PurchaseBeatView: View {
         }
     }
     
+    // The same price helper again. It is repeated from the beat screen above.
     private func formatPrice(_ cents: Int) -> String {
         let dollars = Double(cents) / 100.0
         return String(format: "$%.2f", dollars)
     }
     
+    // Sends the purchase to the server. It currently sends a made-up placeholder receipt
+    // instead of a real Apple one, so the server would record a purchase with no payment. Real
+    // StoreKit buying must replace this before beats are sold.
     private func purchaseBeat() async {
         isPurchasing = true
         errorMessage = nil
@@ -364,6 +384,7 @@ struct PurchaseBeatView: View {
     }
 }
 
+// One bullet in the list of what the buyer gets.
 struct FeatureRow: View {
     let text: String
     
@@ -378,6 +399,7 @@ struct FeatureRow: View {
     }
 }
 
+// The sheet for reporting a beat. The user types a reason and submits it.
 struct ReportBeatView: View {
     let beat: Beat
     @Environment(\.dismiss) var dismiss
@@ -427,6 +449,7 @@ struct ReportBeatView: View {
         }
     }
     
+    // Sends the report to the server, then shows a success message or an error.
     private func submitReport() async {
         guard reason.count >= 10 else { return }
         

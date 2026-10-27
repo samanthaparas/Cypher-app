@@ -4,13 +4,22 @@
 //
 //  Created for Artists tab
 //
+//  PURPOSE: A browsable list of artists with a search bar that shows a dropdown
+//  of matches as you type. This file also defines ArtistCardView (one
+//  artist card) and the ArtistSummary data shape that several other
+//  screens use. Nothing in the app currently opens the list itself.
+//
 
 import SwiftUI
 
+// Loads artists from the server a page at a time and shows them as cards that open the artist's
+// profile.
 struct ArtistsListView: View {
     @StateObject private var viewModel = ArtistsListViewModel()
     @EnvironmentObject var authService: AuthService
     @State private var searchText = ""
+    // True while the search box is being used. It decides whether the dropdown of matches is
+    // showing.
     @State private var isSearchFocused = false
     @FocusState private var isSearchFieldFocused: Bool
     
@@ -30,6 +39,8 @@ struct ArtistsListView: View {
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .padding(.vertical, 10)
                                 .focused($isSearchFieldFocused)
+                                // Each time the search text changes, the view model fetches
+                                // matching artists.
                                 .onChange(of: searchText) { oldValue, newValue in
                                     viewModel.searchArtists(query: newValue)
                                 }
@@ -146,9 +157,11 @@ struct ArtistsListView: View {
             }
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.large)
+            // Lets the user pull down to reload the list.
             .refreshable {
                 await viewModel.loadArtists()
             }
+            // Loads the first page when the screen first appears.
             .task {
                 await viewModel.loadArtists()
             }
@@ -219,6 +232,7 @@ struct SearchResultArtistRow: View {
     }
 }
 
+// One artist as a card: avatar (or first letter), name, city, and follower and track counts.
 struct ArtistCardView: View {
     let artist: ArtistSummary
     
@@ -291,6 +305,7 @@ struct ArtistCardView: View {
 }
 
 // Artist Summary model for list view
+// The short artist record the server sends for lists. The City tab uses it too.
 struct ArtistSummary: Codable, Identifiable {
     let id: String
     let name: String
@@ -300,6 +315,7 @@ struct ArtistSummary: Codable, Identifiable {
     let tracksCount: Int
 }
 
+// A page of artists plus paging numbers.
 struct ArtistsListResponse: Codable {
     let artists: [ArtistSummary]
     let total: Int

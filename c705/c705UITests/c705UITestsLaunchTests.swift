@@ -4,6 +4,9 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: A test that launches the app and saves a screenshot of the launch
+//  screen, so you can see what first appears.
+//
 
 import XCTest
 
@@ -18,6 +21,7 @@ final class c705UITestsLaunchTests: XCTestCase {
     }
 
     @MainActor
+    // Starts the app and attaches a screenshot to the test results.
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()

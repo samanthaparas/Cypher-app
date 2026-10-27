@@ -4,12 +4,21 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Keeps track of who is signed in. It handles login, sign-up, Apple
+//  and Google sign-in, auto-login on the next launch, logout and
+//  account deletion, and tells every screen when the signed-in state
+//  changes.
+//
 
 import Foundation
 import Combine
 
+// @MainActor means this runs on the main thread, which is required for anything that updates
+// the screen.
 @MainActor
 class AuthService: ObservableObject {
+    // Screens watch these three values. When isAuthenticated flips to true, the app moves from
+    // the login screen to the main tabs.
     @Published var isAuthenticated = false
     @Published var currentUser: AppUser?
     @Published var errorMessage: String?
@@ -17,6 +26,7 @@ class AuthService: ObservableObject {
     private let apiService = APIService.shared
     private let keychain = KeychainService.shared
     
+    // The names under which the login token and user are saved in the secure Keychain.
     // Keychain keys
     private let tokenKey = "authToken"
     private let userKey = "currentUser"
@@ -24,6 +34,8 @@ class AuthService: ObservableObject {
     // UserDefaults key to track if user has completed first authentication
     private let hasCompletedFirstAuthKey = "hasCompletedFirstAuth"
     
+    // Always starts signed out, so the login screen shows first. Auto-login is attempted
+    // afterwards.
     init() {
         // Always start with isAuthenticated = false to show login screen first
         // Auto-login will be handled after the login screen loads
@@ -31,6 +43,8 @@ class AuthService: ObservableObject {
         self.currentUser = nil
     }
     
+    // Signs the user back in from the Keychain on a later launch, but only if they have logged
+    // in before on this phone.
     func attemptAutoLogin() {
         // Only enable auto-login if user has completed their first login/signup
         // This ensures new users always see the login screen first
@@ -48,6 +62,9 @@ class AuthService: ObservableObject {
         // If hasCompletedFirstAuth is false, don't auto-login (first time user)
     }
     
+    // Sends the email and password to the server. On success it saves the token and user
+    // securely and marks the user signed in. On failure it sets errorMessage, which the login
+    // screen shows.
     func login(email: String, password: String) async {
         do {
             print("📝 Starting login process...")
@@ -114,6 +131,8 @@ class AuthService: ObservableObject {
         }
     }
     
+    // Creates a new account and signs in. role is the account type, and accessCode is only used
+    // by journalists.
     func signup(username: String?, email: String, password: String, role: String = "ARTIST", accessCode: String? = nil) async {
         do {
             print("📝 Starting signup process...")
@@ -183,6 +202,8 @@ class AuthService: ObservableObject {
         }
     }
     
+    // Sends Apple's proof of identity to the server, which returns the app's own token. Apple
+    // only shares the name and email the first time.
     func signInWithApple(identityToken: String, email: String?, fullName: String?, role: String) async {
         do {
             let baseURL = apiService.getBaseURL()
@@ -310,6 +331,7 @@ class AuthService: ObservableObject {
         }
     }
     
+    // The same idea as Apple sign-in, using Google's proof of identity.
     func signInWithGoogle(idToken: String, email: String?, fullName: String?, role: String) async {
         do {
             let response = try await apiService.signInWithGoogle(
@@ -347,6 +369,8 @@ class AuthService: ObservableObject {
         logout()
     }
 
+    // Forgets the token and user everywhere (memory and Keychain) and returns the app to the
+    // signed-out state.
     func logout() {
         // Clear API token
         apiService.clearAuthToken()

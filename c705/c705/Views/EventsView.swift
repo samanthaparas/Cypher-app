@@ -4,12 +4,18 @@
 //
 //  Created for Events tab (placeholder)
 //
+//  PURPOSE: The Events screen. It is a placeholder ("Events Coming Soon")
+//  because the events feature has not been built yet. The view model
+//  is wired for searching but returns nothing.
+//
 
 import SwiftUI
 import Combine
 
+// Shown under Home, in the Events tab.
 struct EventsView: View {
     @EnvironmentObject var authService: AuthService
+    // The search text lives in the parent screen. This view gets a live link to it.
     @Binding var searchText: String
     @StateObject private var viewModel = EventsViewModel()
     
@@ -23,6 +29,7 @@ struct EventsView: View {
                 if viewModel.isLoading {
                     ProgressView("Searching events...")
                         .padding()
+                // Shown when the user searched and nothing matched.
                 } else if !searchText.isEmpty && viewModel.events.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar.badge.exclamationmark")
@@ -34,6 +41,7 @@ struct EventsView: View {
                     }
                     .padding(.top, 60)
                 } else {
+                    // The default "coming soon" message, shown when nothing has been searched.
                     Image(systemName: "calendar")
                         .font(.system(size: 48))
                         .foregroundColor(.gray)
@@ -51,6 +59,7 @@ struct EventsView: View {
             }
             .padding(.top, 100)
         }
+        // Runs a new event search every time the search text changes.
         .onChange(of: searchText) { oldValue, newValue in
             Task {
                 await viewModel.searchEvents(query: newValue)
@@ -60,10 +69,12 @@ struct EventsView: View {
 }
 
 @MainActor
+// Holds the events list. events is a placeholder list of text until a real Event model exists.
 class EventsViewModel: ObservableObject {
     @Published var events: [String] = [] // Placeholder - replace with Event model
     @Published var isLoading = false
     
+    // Not built yet. It clears the results for now (see the TODO).
     func searchEvents(query: String) async {
         if query.isEmpty {
             events = []

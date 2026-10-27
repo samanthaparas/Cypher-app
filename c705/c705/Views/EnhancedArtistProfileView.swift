@@ -4,9 +4,16 @@
 //
 //  Enhanced Artist Profile with all sections
 //
+//  PURPOSE: The current design of an artist's profile page, built from small
+//  pieces: header, stats, action buttons, music, cypher highlights,
+//  about and social links. The same page serves your own profile (with
+//  Edit and Upload) and other artists' profiles (with Follow, Message
+//  and Invite).
+//
 
 import SwiftUI
 
+// Given an artist id, it loads that profile and arranges the sections below in order.
 struct EnhancedArtistProfileView: View {
     let artistId: String
     @StateObject private var viewModel = ArtistProfileViewModel()
@@ -14,6 +21,8 @@ struct EnhancedArtistProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showEditProfile = false
     @State private var showReportSheet = false
+    // Set when Invite to Cypher is tapped, but no sheet is connected to it yet, so that button
+    // does nothing.
     @State private var showCypherInvite = false
     
     var isOwnProfile: Bool {
@@ -126,18 +135,22 @@ struct EnhancedArtistProfileView: View {
                 }
             }
         }
+        // Slides up the edit screen, which is still a placeholder.
         .sheet(isPresented: $showEditProfile) {
             EditArtistProfileView(profile: viewModel.artistProfile!)
         }
+        // Slides up the report screen, which is still a placeholder.
         .sheet(isPresented: $showReportSheet) {
             ReportArtistView(artistId: artistId)
         }
+        // Loads the profile when the screen first appears.
         .task {
             await viewModel.loadArtistProfile(artistId: artistId)
         }
     }
 }
 
+// Each struct below is one section of the page, kept small so it is easy to find and change.
 // MARK: - Artist Header
 struct ArtistHeaderView: View {
     let profile: ArtistProfile
@@ -195,6 +208,8 @@ struct ArtistHeaderView: View {
     }
 }
 
+// The row of numbers: followers, tracks and cypher wins. The cypher wins number is still a
+// fixed 0.
 // MARK: - Stats Row
 struct StatsRowView: View {
     let followersCount: Int
@@ -227,6 +242,8 @@ struct StatItem: View {
     }
 }
 
+// Shows different buttons for your own profile (Edit, Upload) and for someone else's (Follow,
+// Message, Invite). Message and Upload are not connected yet.
 // MARK: - Action Buttons
 struct ActionButtonsView: View {
     let isOwnProfile: Bool
@@ -305,6 +322,7 @@ struct ActionButtonsView: View {
     }
 }
 
+// The artist's tracks.
 // MARK: - Music Section
 struct MusicSectionView: View {
     let tracks: [Track]
@@ -355,6 +373,7 @@ struct MusicSectionView: View {
     }
 }
 
+// A row of the artist's cypher entries.
 // MARK: - Cypher Highlights
 struct CypherHighlightsView: View {
     let artistId: String
@@ -399,6 +418,8 @@ struct CypherHighlightsView: View {
         }
     }
     
+    // Not built yet. It always sets an empty list, so the section shows "No cypher entries
+    // yet".
     private func loadCypherEntries() async {
         isLoading = true
         // TODO: Load cypher entries for this artist
@@ -445,6 +466,7 @@ struct CypherHighlightCard: View {
     }
 }
 
+// The artist's bio.
 // MARK: - About Section
 struct AboutSectionView: View {
     let profile: ArtistProfile
@@ -472,6 +494,7 @@ struct AboutSectionView: View {
     }
 }
 
+// Buttons that open the artist's Instagram, YouTube, X and TikTok.
 // MARK: - Social Links
 struct ArtistSocialLinksView: View {
     let instagramUrl: String?
@@ -532,6 +555,7 @@ struct ArtistSocialLinkButton: View {
     }
 }
 
+// Shown when the profile cannot be loaded, with a retry button.
 // MARK: - Error View
 struct ErrorView: View {
     let message: String
@@ -554,6 +578,7 @@ struct ErrorView: View {
     }
 }
 
+// These two screens only say "Coming Soon". They exist so the buttons have somewhere to go.
 // Placeholder views for edit and report
 struct EditArtistProfileView: View {
     let profile: ArtistProfile

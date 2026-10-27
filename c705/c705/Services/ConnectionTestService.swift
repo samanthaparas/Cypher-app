@@ -4,10 +4,16 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Checks whether the app can reach the backend server. Used by the
+//  connection test screen to diagnose problems such as a wrong server
+//  address.
+//
 
 import Foundation
 import Network
 
+// Each check returns a ConnectionTestResult (worked or not, plus a message) instead of
+// crashing, so the screen can show it.
 class ConnectionTestService {
     static let shared = ConnectionTestService()
     
@@ -15,6 +21,8 @@ class ConnectionTestService {
     
     // MARK: - Connection Test
     
+    // Asks the server's /health address if it is awake. async means it waits for the answer
+    // without freezing the screen, and it gives up after 5 seconds.
     func testBackendConnection() async -> ConnectionTestResult {
         let baseURL = APIService.shared.getBaseURL()
         
@@ -70,6 +78,7 @@ class ConnectionTestService {
         }
     }
     
+    // A rough check that the server responds. It does not talk to the database directly.
     func testDatabaseConnection() async -> ConnectionTestResult {
         // Test database by trying to signup/login (which requires DB)
         // Or we can create a simple health check endpoint
@@ -115,6 +124,7 @@ class ConnectionTestService {
         }
     }
     
+    // Not implemented. It always returns nothing.
     func getLocalIPAddress() -> String? {
         // Note: This is a simplified version
         // For iOS, you typically need to get the Mac's IP from network settings
@@ -123,6 +133,7 @@ class ConnectionTestService {
     }
 }
 
+// A simple report card: whether the test passed, a short message and the details.
 struct ConnectionTestResult {
     let success: Bool
     let message: String

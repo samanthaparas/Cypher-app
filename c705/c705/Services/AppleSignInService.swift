@@ -4,20 +4,29 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Shows Apple's "Sign in with Apple" sheet and returns the result.
+//  AuthService then sends that result to the backend.
+//
 
 import Foundation
 import AuthenticationServices
 
 @MainActor
+// NSObject is needed because Apple's sign-in system talks to this class through delegate
+// methods.
 class AppleSignInService: NSObject {
     static let shared = AppleSignInService()
     
+    // A continuation bridges the old callback style to async/await: signIn() pauses here until
+    // a delegate method below delivers the result.
     private var continuation: CheckedContinuation<AppleSignInResult, Error>?
     
     private override init() {
         super.init()
     }
     
+    // Builds the Apple request (asking for name and email), shows Apple's sheet, and waits
+    // until the user finishes.
     func signIn() async throws -> AppleSignInResult {
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
@@ -38,7 +47,11 @@ class AppleSignInService: NSObject {
     }
 }
 
+// These methods are called by Apple when the sheet finishes: one for success and one for an
+// error or cancel.
 extension AppleSignInService: ASAuthorizationControllerDelegate {
+    // Success: pulls the identity token, name and email out of Apple's reply and hands them
+    // back to signIn().
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
             let userIdentifier = appleIDCredential.user
@@ -77,6 +90,7 @@ extension AppleSignInService: ASAuthorizationControllerDelegate {
         }
     }
     
+    // Failure or cancel: turns Apple's error into a friendlier AppleSignInError.
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         // Provide more user-friendly error messages
         if let authError = error as? ASAuthorizationError {
@@ -118,6 +132,7 @@ extension AppleSignInService: ASAuthorizationControllerDelegate {
     }
 }
 
+// Tells Apple which window to show the sign-in sheet on.
 extension AppleSignInService: ASAuthorizationControllerPresentationContextProviding {
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -140,6 +155,7 @@ extension AppleSignInService: ASAuthorizationControllerPresentationContextProvid
     }
 }
 
+// What a successful sign-in gives back: the identity token plus the optional email and name.
 struct AppleSignInResult {
     let userIdentifier: String
     let email: String?
@@ -147,6 +163,7 @@ struct AppleSignInResult {
     let identityToken: String
 }
 
+// The messages shown when Apple sign-in fails.
 enum AppleSignInError: LocalizedError {
     case failedToGetToken
     case invalidCredential

@@ -4,12 +4,17 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The data and logic for the Arena (Cypher hub) screen: the active
+//  cyphers, the Popular list and the user's invites.
+//
 
 import Foundation
 import Combine
 
 @MainActor
 class CypherHubViewModel: ObservableObject {
+    // The lists the Arena can show. Note that cyphers is loaded here, but the screen currently
+    // shows only topCyphers.
     @Published var cyphers: [Cypher] = []
     @Published var topCyphers: [TopCypher] = []
     @Published var trendingCyphers: [TopCypher] = []
@@ -18,8 +23,12 @@ class CypherHubViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     private let apiService = APIService.shared
+    // Stops a second load from starting while one is already running.
     private var isLoadingInProgress = false
     
+    // Loads active cyphers, then the top cyphers of the week, then the user's invites. A
+    // failure in the top list or the invites is handled quietly, so one problem does not blank
+    // the whole screen.
     func loadCyphers() async {
         // Prevent multiple simultaneous loads
         guard !isLoadingInProgress else {
@@ -37,6 +46,7 @@ class CypherHubViewModel: ObservableObject {
             
             // Load top cyphers (this week) - handle errors gracefully; no trending fetch (tab removed)
             do {
+                // Asks the server for this week's most popular cyphers.
                 topCyphers = try await apiService.getTopCyphers(range: "week", limit: 10)
             } catch {
                 topCyphers = []
@@ -45,6 +55,7 @@ class CypherHubViewModel: ObservableObject {
             trendingCyphers = []
             
             // Load user's invites (handle errors gracefully - might fail if not authenticated)
+            // Loads invitations the user has received.
             invites = try await apiService.getUserCypherInvites()
         } catch {
             errorMessage = "Failed to load cyphers: \(error.localizedDescription)"

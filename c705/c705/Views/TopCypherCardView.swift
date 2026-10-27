@@ -4,9 +4,16 @@
 //
 //  Created for Top Cypher card display
 //
+//  PURPOSE: Two ways to draw a top cypher: a wide card for horizontal scrolling
+//  and a compact row for lists. Neither is used anywhere right now
+//  (the Arena uses PopularCypherCardView instead), so they can likely
+//  be removed.
+//
 
 import SwiftUI
 
+// A 280-point wide card with a score badge, title, host and counts of entries, votes and
+// artists.
 struct TopCypherCardView: View {
     let topCypher: TopCypher
     let onTap: () -> Void
@@ -71,6 +78,7 @@ struct TopCypherCardView: View {
     }
 }
 
+// A shorter row version: score on the left, title and host on the right.
 struct TopCypherRowView: View {
     let topCypher: TopCypher
     let onTap: () -> Void

@@ -4,9 +4,17 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: How one item in the feed is drawn. A feed holds two kinds of item,
+//  tracks and articles, so this file has a wrapper that picks the
+//  right card for each. Right now only the preview at the bottom uses it,
+//  because Home shows the Trending, Articles, Events and City tabs instead
+//  of a mixed feed.
+//
 
 import SwiftUI
 
+// The outer card. It checks the item's type and shows a track card or an article card inside
+// the same rounded shape.
 struct FeedItemView: View {
     let item: FeedItem
     
@@ -25,6 +33,8 @@ struct FeedItemView: View {
     }
 }
 
+// A track card: title, artist link, an audio player, like and comment buttons, and how long ago
+// it was posted.
 struct TrackFeedItemView: View {
     let item: FeedItem
     
@@ -55,6 +65,8 @@ struct TrackFeedItemView: View {
             
             // Audio Player
             if let audioUrl = item.audioUrl {
+                // A feed item is not a full Track, so a Track is assembled from its fields to
+                // give the player what it needs.
                 CompactAudioPlayerView(track: Track(
                     id: item.id,
                     title: item.title,
@@ -95,6 +107,8 @@ struct TrackFeedItemView: View {
         }
     }
     
+    // Turns the server's date text into short relative wording like "2h". If the date cannot be
+    // read it shows the original text.
     private func formatDate(_ dateString: String) -> String {
         let formatter = ISO8601DateFormatter()
         if let date = formatter.date(from: dateString) {
@@ -106,6 +120,7 @@ struct TrackFeedItemView: View {
     }
 }
 
+// An article card: title, a three-line preview, the city, and the author.
 struct ArticleFeedItemView: View {
     let item: FeedItem
     
@@ -147,6 +162,8 @@ struct ArticleFeedItemView: View {
         }
     }
     
+    // The same date helper again. This copy and the one above are identical and could be
+    // shared.
     private func formatDate(_ dateString: String) -> String {
         let formatter = ISO8601DateFormatter()
         if let date = formatter.date(from: dateString) {

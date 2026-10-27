@@ -4,10 +4,17 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The user's saved settings (notifications, privacy, playback and
+//  role-specific options). The layout mirrors the backend's settings
+//  JSON, and every property has a default so a new user starts with
+//  sensible values.
+//
 
 import Foundation
 
 // MARK: - Settings Model (matches backend JSON structure)
+// All of one user's settings in one place. The role-specific groups are optional because most
+// users only need one of them.
 struct UserSettings: Codable {
     var notifications: NotificationSettings
     var privacy: PrivacySettings
@@ -27,6 +34,8 @@ struct UserSettings: Codable {
 
 // MARK: - Base Settings
 
+// Which kinds of alerts the user wants. These are saved choices only; the app does not send
+// push notifications yet.
 struct NotificationSettings: Codable {
     var likes: Bool = true
     var comments: Bool = true
@@ -35,6 +44,7 @@ struct NotificationSettings: Codable {
     var events: Bool = true
 }
 
+// Who can see, comment on and message this user, and which users they have blocked.
 struct PrivacySettings: Codable {
     var privateProfile: Bool = false
     var whoCanComment: CommentPermission = .everyone
@@ -53,6 +63,7 @@ enum MessagePermission: String, Codable {
     case none = "none"
 }
 
+// How audio plays: autoplay, mobile data use and quality.
 struct PlaybackSettings: Codable {
     var autoplayNext: Bool = true
     var streamOverCellular: Bool = false
@@ -68,6 +79,7 @@ enum AudioQuality: String, Codable {
 
 // MARK: - Artist Settings
 
+// Options only artists see, such as bio, social links and whether others can start duets.
 struct ArtistSettings: Codable {
     var displayName: String?
     var bio: String?
@@ -83,6 +95,7 @@ struct ArtistSettings: Codable {
 
 // MARK: - Producer Settings
 
+// Options only producers see, such as tags, equipment and default beat price.
 struct ProducerSettings: Codable {
     var producerName: String?
     var tags: [String] = []
@@ -98,6 +111,7 @@ struct ProducerSettings: Codable {
 
 // MARK: - Engineer Settings
 
+// Options only engineers see, such as studio details and available days.
 struct EngineerSettings: Codable {
     var studioName: String?
     var location: String?
@@ -111,6 +125,7 @@ struct EngineerSettings: Codable {
 
 // MARK: - Journalist Settings
 
+// Options only journalists see: the cities and genres they cover.
 struct JournalistSettings: Codable {
     var citiesCovered: [String] = []
     var genresCovered: [String] = []
@@ -118,6 +133,8 @@ struct JournalistSettings: Codable {
 
 // MARK: - Freestyle Arena Settings
 
+// Options for the Arena (the cypher screens): countdown timer, silence trimming, drafts, battle
+// invites and ranking.
 struct FreestyleArenaSettings: Codable {
     var countdownTimer: Bool = true
     var autoTrimSilence: Bool = true

@@ -4,9 +4,14 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Shapes of a track (a song an artist uploaded) and the Artist
+//  attached to it.
+//
 
 import Foundation
 
+// One uploaded song. audioUrl is where the sound file lives, and likeCount is how many people
+// liked it.
 struct Track: Codable, Identifiable {
     let id: String
     let title: String
@@ -15,6 +20,7 @@ struct Track: Codable, Identifiable {
     let likeCount: Int
     let createdAt: String
     let artist: Artist?
+    // This is a var (changeable) because the app flips it right away when the user taps like.
     var isLiked: Bool?
     
     enum CodingKeys: String, CodingKey {
@@ -29,6 +35,7 @@ struct Track: Codable, Identifiable {
     }
 }
 
+// A short artist profile: a bio plus the AppUser account behind it.
 struct Artist: Codable, Identifiable {
     let id: String
     let bio: String?

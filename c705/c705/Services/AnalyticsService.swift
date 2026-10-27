@@ -4,14 +4,21 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Records what people do in the app (likes, plays, profile views, app
+//  opens). For now the events only print to the console and are kept
+//  on the phone; a real analytics service can be plugged in later.
+//
 
 import Foundation
 
+// Call AnalyticsService.shared.trackSomething() from any screen. Each tracking function below
+// just names the event and passes the details.
 class AnalyticsService {
     static let shared = AnalyticsService()
     
     private init() {}
     
+    // Events about how people use content: likes, comments, follows and plays.
     // MARK: - Engagement Events
     
     func trackLike(trackId: String) {
@@ -57,6 +64,8 @@ class AnalyticsService {
         logEvent("feed_viewed")
     }
     
+    // Events that show whether people come back: when the app opens, closes or goes to the
+    // background.
     // MARK: - Retention Events
     
     func trackSessionStart() {
@@ -86,6 +95,8 @@ class AnalyticsService {
     
     // MARK: - Private
     
+    // Every tracking function funnels through here. To connect Firebase or Mixpanel later, this
+    // is the one place to change.
     private func logEvent(_ eventName: String, parameters: [String: Any] = [:]) {
         // In production, integrate with analytics service (Firebase, Mixpanel, etc.)
         // For now, log to console and optionally save to local storage
@@ -102,6 +113,8 @@ class AnalyticsService {
         saveEventToLocalStorage(event)
     }
     
+    // Keeps the latest 1000 events in UserDefaults (the phone's small settings storage) and
+    // drops older ones.
     private func saveEventToLocalStorage(_ event: [String: Any]) {
         var events = UserDefaults.standard.array(forKey: "analytics_events") as? [[String: Any]] ?? []
         events.append(event)
@@ -114,6 +127,7 @@ class AnalyticsService {
         UserDefaults.standard.set(events, forKey: "analytics_events")
     }
     
+    // Helpers to read or clear the saved events, for example when debugging.
     // MARK: - Analytics Export
     
     func getStoredEvents() -> [[String: Any]] {

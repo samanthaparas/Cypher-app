@@ -4,14 +4,20 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: The comments screen for a track: a scrolling list of comments with
+//  a box at the bottom to write a new one. Today it is only opened
+//  from the feed item card.
+//
 
 import SwiftUI
 
 struct CommentsView: View {
     let trackId: String
+    // This screen owns its own CommentsViewModel, built for one specific track.
     @StateObject private var viewModel: CommentsViewModel
     @Environment(\.dismiss) private var dismiss
     
+    // Builds the view model with the track's id before the screen appears.
     init(trackId: String) {
         self.trackId = trackId
         _viewModel = StateObject(wrappedValue: CommentsViewModel(trackId: trackId))
@@ -21,6 +27,8 @@ struct CommentsView: View {
         NavigationView {
             VStack(spacing: 0) {
                 // Comments List
+                // If there are no comments (and nothing is loading), show an encouraging empty
+                // message. Otherwise show the list.
                 if viewModel.comments.isEmpty && !viewModel.isLoading {
                     VStack(spacing: 16) {
                         Image(systemName: "bubble.left.and.bubble.right")
@@ -40,6 +48,8 @@ struct CommentsView: View {
                                 CommentRowView(comment: comment)
                             }
                             
+                            // At the bottom of the list: a spinner while more load, or a Load
+                            // More button if there are more pages.
                             if viewModel.isLoadingMore {
                                 ProgressView()
                                     .padding()
@@ -59,6 +69,8 @@ struct CommentsView: View {
                 // Comment Input
                 Divider()
                 HStack(spacing: 12) {
+                    // The text box grows up to 4 lines. $ means the box and the view model
+                    // share the same text.
                     TextField("Add a comment...", text: $viewModel.newCommentText, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(1...4)
@@ -86,6 +98,7 @@ struct CommentsView: View {
                     }
                 }
             }
+            // Loads the comments when the screen first appears.
             .task {
                 await viewModel.loadComments()
             }
@@ -100,6 +113,7 @@ struct CommentsView: View {
     }
 }
 
+// One comment: a circle with the author's first letter, their name, the text, and how long ago.
 struct CommentRowView: View {
     let comment: Comment
     
@@ -136,6 +150,8 @@ struct CommentRowView: View {
         .padding(.vertical, 4)
     }
     
+    // Turns the server's date text into short relative wording like "5m". If it cannot be read
+    // it shows the original text.
     private func formatDate(_ dateString: String) -> String {
         let formatter = ISO8601DateFormatter()
         if let date = formatter.date(from: dateString) {

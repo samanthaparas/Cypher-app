@@ -4,14 +4,20 @@
 //
 //  Created by Avery Harris on 12/22/25.
 //
+//  PURPOSE: Shapes of the Home feed. The feed mixes tracks and articles, so one
+//  FeedItem can be either kind.
+//
 
 import Foundation
 
+// The two kinds of thing that can appear in the feed.
 enum FeedItemType: String, Codable {
     case track
     case article
 }
 
+// One feed entry. Fields that only apply to tracks or only to articles are optional (?) and
+// stay empty for the other kind.
 struct FeedItem: Codable, Identifiable {
     let id: String
     let type: FeedItemType
@@ -44,11 +50,14 @@ struct FeedItem: Codable, Identifiable {
     }
 }
 
+// A page of feed items plus paging info.
 struct FeedResponse: Codable {
     let feed: [FeedItem]
     let pagination: Pagination
 }
 
+// Paging info shared by several lists in the app (the feed, comments, artist tracks): which
+// page, how many per page, and the totals.
 struct Pagination: Codable {
     let page: Int
     let limit: Int
