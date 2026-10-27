@@ -62,7 +62,7 @@ struct ArtistsListView: View {
                                 }
                             }
                         }
-                        .background(Color.gray.opacity(0.1))
+                        .background(Theme.card)
                         .cornerRadius(10)
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -105,9 +105,7 @@ struct ArtistsListView: View {
                                 }
                             }
                             .frame(maxHeight: 400)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                            .themeCard(padding: 0)
                             .padding(.horizontal)
                             .transition(AppAnimations.listTransition)
                             .animation(AppAnimations.fastSpring, value: isSearchFocused)
@@ -155,6 +153,7 @@ struct ArtistsListView: View {
                     }
                 }
             }
+            .themedScreen()
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.large)
             // Lets the user pull down to reload the list.
@@ -209,7 +208,7 @@ struct SearchResultArtistRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(artist.name)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                 
                 if let city = artist.city, !city.isEmpty {
@@ -267,7 +266,7 @@ struct ArtistCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(artist.name)
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                 
                 if let city = artist.city, !city.isEmpty {
@@ -298,9 +297,7 @@ struct ArtistCardView: View {
                 .foregroundColor(.gray)
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .themeCard(padding: 0)
     }
 }
 

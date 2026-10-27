@@ -68,7 +68,7 @@ struct UniversalSearchView: View {
                         }
                     }
                 }
-                .background(Color.gray.opacity(0.1))
+                .background(Theme.card)
                 .cornerRadius(12)
                 .padding(.horizontal)
                 .padding(.top, 12)
@@ -146,6 +146,7 @@ struct UniversalSearchView: View {
                     Spacer()
                 }
             }
+            .themedScreen()
             .navigationBarHidden(true)
         }
     }

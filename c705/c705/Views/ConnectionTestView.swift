@@ -92,6 +92,7 @@ struct ConnectionTestView: View {
                     .foregroundColor(.secondary)
                 }
             }
+            .themedScreen()
             .navigationTitle("Connection Test")
             .alert("Set Custom Backend URL", isPresented: $showCustomURLInput) {
                 TextField("http://138.197.13.98", text: $customURL)

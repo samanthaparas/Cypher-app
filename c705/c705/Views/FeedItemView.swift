@@ -27,7 +27,7 @@ struct FeedItemView: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(Theme.card)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }

@@ -51,6 +51,7 @@ struct CypherDetailView: View {
                     leaderboardView
                 }
             }
+            .themedScreen()
             .navigationTitle(viewModel.cypher?.title ?? "Cypher")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -81,7 +82,7 @@ struct CypherDetailView: View {
                     if let description = cypher.description {
                         Text(description)
                             .font(.body)
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                             .padding()
                     }
                     
@@ -242,7 +243,7 @@ struct RuleRow: View {
                 .font(.system(size: 12))
             Text(text)
                 .font(.system(size: 14))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }

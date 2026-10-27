@@ -36,6 +36,19 @@ enum Theme {
     static let buttonRadius: CGFloat = 10
 }
 
+// Shortcut so every screen gets the mockup's navy background the same way (cards use
+// .themeCard() from CardStyle.swift).
+// MARK: - View helpers
+extension View {
+    /// The navy app background behind a whole screen. scrollContentBackground(.hidden) removes
+    /// the gray that Lists and Forms draw by default, so the navy shows through.
+    func themedScreen() -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(Theme.background.ignoresSafeArea())
+    }
+}
+
 // Lets code write a color the way designers do, as a hex code like 0x2F7BFF.
 // MARK: - Hex color helper
 extension Color {

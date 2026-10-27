@@ -49,7 +49,7 @@ struct BeatsHubView: View {
                             }
                         }
                     }
-                    .background(Color.gray.opacity(0.1))
+                    .background(Theme.card)
                     .cornerRadius(10)
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -59,7 +59,7 @@ struct BeatsHubView: View {
                     HStack {
                         Text("Beats Marketplace")
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                         
                         Spacer()
                         
@@ -175,6 +175,7 @@ struct BeatsHubView: View {
             .refreshable {
                 await viewModel.refreshBeats()
             }
+            .themedScreen()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -207,7 +208,7 @@ struct BeatCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(beat.title)
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                 
                 if let producer = beat.producer {
@@ -243,9 +244,7 @@ struct BeatCardView: View {
             }
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .themeCard(padding: 0)
     }
     
     // Prices are stored in cents. This turns 999 into $9.99.
@@ -308,6 +307,7 @@ struct BeatsFiltersView: View {
                     }
                 }
             }
+            .themedScreen()
             .navigationTitle("Filters")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -107,7 +107,7 @@ struct CypherVotingView: View {
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Theme.card)
                     .cornerRadius(12)
                     .padding(.horizontal)
                     
@@ -143,9 +143,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                         
                         // Flow Rating
                         VStack(alignment: .leading, spacing: 8) {
@@ -172,9 +170,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                         
                         // Creativity Rating
                         VStack(alignment: .leading, spacing: 8) {
@@ -201,9 +197,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                     }
                     .padding(.horizontal)
                     
@@ -238,6 +232,7 @@ struct CypherVotingView: View {
                     .padding(.bottom, 20)
                 }
             }
+            .themedScreen()
             .navigationTitle("Vote")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
