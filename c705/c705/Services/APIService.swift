@@ -126,6 +126,13 @@ class APIService {
             // Only log errors, not successful responses
             
             guard (200...299).contains(httpResponse.statusCode) else {
+                // A 401 on a request that carried our token means the saved token is no longer
+                // valid (usually expired). Tell AuthService so it can sign the user out.
+                if httpResponse.statusCode == 401,
+                   request.value(forHTTPHeaderField: "Authorization") != nil {
+                    NotificationCenter.default.post(name: .authTokenRejected, object: nil)
+                }
+
                 // Only log error response body for non-common errors
                 if httpResponse.statusCode != 404 && httpResponse.statusCode != 401 {
                     if let errorString = String(data: data, encoding: .utf8) {
@@ -1226,18 +1233,25 @@ class APIService {
     }
 }
 
+extension Notification.Name {
+    // Posted when the server rejects the saved login token with 401. AuthService listens for it.
+    static let authTokenRejected = Notification.Name("authTokenRejected")
+}
+
 // The kinds of errors a request can fail with, each with a readable message.
+// LocalizedError makes iOS use errorDescription for error.localizedDescription, even when the
+// error is held as a plain Error, instead of "The operation couldn't be completed".
 // MARK: - API Errors
 
-enum APIError: Error {
+enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
     case httpError(Int)
     case httpErrorWithMessage(Int, String)
     case decodingError(Error)
     case networkError(String)
-    
-    var localizedDescription: String {
+
+    var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid URL"
