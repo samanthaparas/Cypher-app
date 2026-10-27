@@ -149,7 +149,8 @@ export class CyphersService {
         startDate: new Date(createDto.startDate),
         endDate: createDto.endDate ? new Date(createDto.endDate) : null,
         hostArtistId: userId, // Set the creator as the host
-        visibility: 'INVITE_ONLY', // Set to INVITE_ONLY for created cyphers
+        // Public unless the creator asks for invite-only. The Popular list only shows public cyphers.
+        visibility: createDto.visibility ?? 'PUBLIC',
       },
     });
   }

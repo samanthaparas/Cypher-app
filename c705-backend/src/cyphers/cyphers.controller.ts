@@ -37,6 +37,34 @@ export class CyphersController {
     return this.cyphersService.getActiveCyphers(page, limit);
   }
 
+  // Routes with fixed words (top, search) must come BEFORE @Get(':id'), because ':id'
+  // matches any single word and would otherwise swallow them ("top" would be treated as a cypher id).
+
+  /**
+   * GET /cyphers/top - Get top cyphers based on engagement score (GUEST ACCESS - No auth required)
+   */
+  @Get('top')
+  async getTopCyphers(
+    @Query('range', new DefaultValuePipe('week')) range: 'trending' | 'week' | 'all-time',
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.cyphersService.getTopCyphers(range, limit);
+  }
+
+  /**
+   * GET /cyphers/search - Search cyphers by title or description (GUEST ACCESS)
+   */
+  @Get('search')
+  async searchCyphers(
+    @Query('q') query: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    if (!query || query.trim().length < 2) {
+      return { cyphers: [] };
+    }
+    return { cyphers: await this.cyphersService.searchCyphers(query.trim(), limit) };
+  }
+
   /**
    * GET /cyphers/:id - Get cypher details with entries (GUEST ACCESS - No auth required)
    */
@@ -135,17 +163,6 @@ export class CyphersController {
   }
 
   /**
-   * GET /cyphers/top - Get top cyphers based on engagement score (GUEST ACCESS - No auth required)
-   */
-  @Get('top')
-  async getTopCyphers(
-    @Query('range', new DefaultValuePipe('week')) range: 'trending' | 'week' | 'all-time',
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    return this.cyphersService.getTopCyphers(range, limit);
-  }
-
-  /**
    * POST /cyphers/:id/invite - Invite a user to a cypher (AUTH REQUIRED - Any user can invite)
    */
   @Post(':id/invite')
@@ -156,20 +173,6 @@ export class CyphersController {
     @CurrentUser() user: any,
   ) {
     return this.cyphersService.inviteArtist(cypherId, user.id, inviteDto);
-  }
-
-  /**
-   * GET /cyphers/search - Search cyphers by title or description (GUEST ACCESS)
-   */
-  @Get('search')
-  async searchCyphers(
-    @Query('q') query: string,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    if (!query || query.trim().length < 2) {
-      return { cyphers: [] };
-    }
-    return { cyphers: await this.cyphersService.searchCyphers(query.trim(), limit) };
   }
 
   /**
