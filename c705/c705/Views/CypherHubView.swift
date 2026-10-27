@@ -162,7 +162,29 @@ struct CypherHubView: View {
                     .padding(.horizontal)
                 }
 
-                if viewModel.isLoading && viewModel.topCyphers.isEmpty {
+                if selectedTab == "All" {
+                    // Every active cypher, newest first, from viewModel.cyphers.
+                    if viewModel.isLoading && viewModel.cyphers.isEmpty {
+                        ProgressView("Loading cyphers...")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else if viewModel.cyphers.isEmpty {
+                        Text("No cyphers yet. Start one!")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(viewModel.cyphers) { cypher in
+                                CypherCardView(cypher: cypher) {
+                                    selectedCypherId = cypher.id
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                } else if viewModel.isLoading && viewModel.topCyphers.isEmpty {
                     ProgressView("Loading cyphers...")
                         .frame(maxWidth: .infinity)
                         .padding()

@@ -13,8 +13,7 @@ import Combine
 
 @MainActor
 class CypherHubViewModel: ObservableObject {
-    // The lists the Arena can show. Note that cyphers is loaded here, but the screen currently
-    // shows only topCyphers.
+    // The lists the Arena can show: topCyphers on the Top tab, cyphers on the All tab.
     @Published var cyphers: [Cypher] = []
     @Published var topCyphers: [TopCypher] = []
     @Published var trendingCyphers: [TopCypher] = []
@@ -46,8 +45,13 @@ class CypherHubViewModel: ObservableObject {
             
             // Load top cyphers (this week) - handle errors gracefully; no trending fetch (tab removed)
             do {
-                // Asks the server for this week's most popular cyphers.
+                // Asks the server for this week's most popular cyphers. The server's "week" only
+                // counts cyphers created in the last 7 days, so fall back to all-time when it is
+                // empty rather than showing no Popular list at all.
                 topCyphers = try await apiService.getTopCyphers(range: "week", limit: 10)
+                if topCyphers.isEmpty {
+                    topCyphers = try await apiService.getTopCyphers(range: "all-time", limit: 10)
+                }
             } catch {
                 topCyphers = []
             }
