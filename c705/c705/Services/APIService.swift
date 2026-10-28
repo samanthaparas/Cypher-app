@@ -613,7 +613,46 @@ class APIService {
         
         return try await performRequest(request, responseType: CypherEntry.self)
     }
-    
+
+    // Uploads a beat the creator imported from their phone and returns its link, so everyone
+    // who plays the cypher hears the same beat. It goes in the cyphers folder, which the
+    // bucket lets anyone read.
+    func uploadCypherBeat(audioData: Data, fileName: String) async throws -> String {
+        guard let url = URL(string: "\(baseURL)/s3/upload/cyphers") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let mimeType: String
+        switch (fileName as NSString).pathExtension.lowercased() {
+        case "mp3": mimeType = "audio/mpeg"
+        case "wav": mimeType = "audio/wav"
+        case "aac": mimeType = "audio/aac"
+        default: mimeType = "audio/mp4"
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        struct UploadResponse: Decodable { let url: String }
+        return try await performRequest(request, responseType: UploadResponse.self).url
+    }
+
     func getCypherEntries(cypherId: String, page: Int = 1, limit: Int = 20) async throws -> CypherEntriesResponse {
         guard let request = createRequest(endpoint: "/cyphers/\(cypherId)/entries?page=\(page)&limit=\(limit)") else {
             throw APIError.invalidURL

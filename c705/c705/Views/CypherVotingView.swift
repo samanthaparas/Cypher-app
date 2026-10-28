@@ -13,6 +13,8 @@ import SwiftUI
 
 struct CypherVotingView: View {
     let entry: CypherEntry
+    // The cypher's beat, played under the entry. nil plays the voice alone.
+    var beatUrl: String? = nil
     // Called when the vote is submitted. The three numbers are the scores.
     let onVote: (Int, Int, Int) -> Void
     @Environment(\.dismiss) var dismiss
@@ -69,7 +71,7 @@ struct CypherVotingView: View {
                             Button(action: {
                                 Task {
                                     do {
-                                        try await player.togglePlayback(urlString: entry.audioUrl)
+                                        try await player.togglePlayback(urlString: entry.audioUrl, beatURLString: beatUrl)
                                     } catch {
                                         audioError = error.localizedDescription
                                     }

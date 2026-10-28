@@ -192,7 +192,7 @@ struct CypherDetailView: View {
                         .padding()
                 } else {
                     ForEach(viewModel.entries) { entry in
-                        CypherEntryRowView(entry: entry, onVote: { bars, flow, creativity in
+                        CypherEntryRowView(entry: entry, beatUrl: viewModel.cypher?.beatUrl, onVote: { bars, flow, creativity in
                             Task {
                                 await viewModel.voteEntry(entryId: entry.id, bars: bars, flow: flow, creativity: creativity)
                             }

@@ -58,7 +58,8 @@ export class S3Service {
   }
 
   /**
-   * Upload a file with public read access
+   * Upload a file meant to be read by anyone with its URL.
+   * No per-file ACL is sent: new buckets reject ACLs, so public reading comes from the bucket policy.
    * @param file - File buffer or stream
    * @param key - S3 object key (path/filename)
    * @param contentType - MIME type of the file
@@ -75,7 +76,6 @@ export class S3Service {
         Key: key,
         Body: file,
         ContentType: contentType,
-        ACL: 'public-read',
       });
 
       await this.s3Client.send(command);

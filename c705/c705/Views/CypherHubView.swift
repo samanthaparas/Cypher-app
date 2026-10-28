@@ -253,8 +253,11 @@ struct CypherHubView: View {
         )) { nav in
             CypherDetailView(cypherId: nav.id)
         }
-        // Slides up the Create Cypher form.
-        .sheet(isPresented: $showCreateCypher) {
+        // Slides up the Create Cypher form, and reloads the lists when it closes so a new
+        // cypher shows up straight away.
+        .sheet(isPresented: $showCreateCypher, onDismiss: {
+            Task { await viewModel.loadCyphers() }
+        }) {
             CreateCypherView()
         }
         // Runs once when the screen first appears: loads the cyphers and then works out the

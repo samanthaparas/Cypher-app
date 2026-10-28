@@ -15,6 +15,8 @@ import SwiftUI
 // One entry in a cypher: who posted it, its score, a play button, and a vote button.
 struct CypherEntryRowView: View {
     let entry: CypherEntry
+    // The cypher's beat, played under the entry. nil plays the voice alone.
+    var beatUrl: String? = nil
     let onVote: (Int, Int, Int) -> Void
 
     // The app's shared audio player. @ObservedObject makes this row redraw
@@ -151,7 +153,7 @@ struct CypherEntryRowView: View {
             ReportEntryView(entryId: entry.id)
         }
         .sheet(isPresented: $showVotingSheet) {
-            CypherVotingView(entry: entry) { bars, flow, creativity in
+            CypherVotingView(entry: entry, beatUrl: beatUrl) { bars, flow, creativity in
                 onVote(bars, flow, creativity)
                 hasVoted = true
             }
@@ -164,7 +166,7 @@ struct CypherEntryRowView: View {
         isLoadingAudio = true
         defer { isLoadingAudio = false }
         do {
-            try await player.togglePlayback(urlString: entry.audioUrl)
+            try await player.togglePlayback(urlString: entry.audioUrl, beatURLString: beatUrl)
         } catch {
             audioError = error.localizedDescription
         }
