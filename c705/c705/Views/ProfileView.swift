@@ -119,7 +119,7 @@ struct ProfileView: View {
                         HStack(spacing: 8) {
                             Text(displayName)
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
+                                .foregroundColor(Theme.textPrimary)
                             Button(action: { editUsernameText = authService.currentUser?.username ?? ""; usernameErrorMessage = nil; showEditUsername = true }) {
                                 Image(systemName: "pencil.circle.fill")
                                     .font(.system(size: 22))
@@ -146,7 +146,7 @@ struct ProfileView: View {
                             } else {
                                 Text(bioText)
                                     .font(.system(size: 14))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Theme.textPrimary)
                             }
                         }
                         .padding(.horizontal)
@@ -226,6 +226,7 @@ struct ProfileView: View {
                     }
                 }
             }
+            .themedScreen()
             .navigationTitle(displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -235,7 +236,7 @@ struct ProfileView: View {
                             dismiss()
                         }) {
                             Image(systemName: "chevron.left")
-                                .foregroundColor(.black)
+                                .foregroundColor(Theme.textPrimary)
                         }
                     }
                 }
@@ -244,7 +245,7 @@ struct ProfileView: View {
                         showSettings = true
                     }) {
                         Image(systemName: "gearshape.fill")
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                     }
                 }
             }
@@ -468,7 +469,7 @@ struct CypherInviteRowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(invite.cypher.title)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                     
                     HStack(spacing: 4) {
                         Text("From:")
@@ -507,9 +508,7 @@ struct CypherInviteRowView: View {
                     .foregroundColor(.gray)
             }
             .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+            .themeCard(padding: 0)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -538,7 +537,7 @@ struct TabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: isSelected ? .bold : .regular))
-                .foregroundColor(isSelected ? .black : .gray)
+                .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .overlay(
@@ -641,7 +640,7 @@ struct BeatsSectionView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(Color.gray.opacity(0.1))
+            .background(Theme.card)
             .cornerRadius(8)
             .padding(.horizontal)
             
@@ -656,7 +655,7 @@ struct BeatsSectionView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Purchased Beats")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Theme.textPrimary)
                                     .padding(.horizontal)
                                 
                                 ForEach(filteredPurchasedBeats) { beat in
@@ -670,7 +669,7 @@ struct BeatsSectionView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Imported Beats")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Theme.textPrimary)
                                     .padding(.horizontal)
                                 
                                 ForEach(filteredImportedBeats) { beat in
@@ -725,7 +724,7 @@ struct BeatRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(beat.title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                 
                 HStack(spacing: 8) {
                     if beat.isPurchased {
@@ -812,6 +811,7 @@ struct ImportBeatView: View {
                 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Import Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -852,6 +852,7 @@ struct EditUsernameSheet: View {
                 Spacer()
             }
             .padding(.top, 24)
+            .themedScreen()
             .navigationTitle("Change Username")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1633,6 +1634,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .themedScreen()
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1695,7 +1697,7 @@ struct SettingsRow: View {
                 .frame(width: 24)
             Text(title)
                 .font(.system(size: 16))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
             Spacer()
             if let value = value {
                 Text(value)
@@ -1719,6 +1721,7 @@ struct CommentPermissionView: View {
                 Text("Followers").tag(CommentPermission.followers)
             }
         }
+        .themedScreen()
         .navigationTitle("Who Can Comment")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -1736,6 +1739,7 @@ struct MessagePermissionView: View {
                 Text("None").tag(MessagePermission.none)
             }
         }
+        .themedScreen()
         .navigationTitle("Who Can Message Me")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -1753,6 +1757,7 @@ struct AudioQualityView: View {
                 Text("High").tag(AudioQuality.high)
             }
         }
+        .themedScreen()
         .navigationTitle("Audio Quality")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -1838,6 +1843,7 @@ struct DeleteAccountView: View {
 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Delete Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1858,6 +1864,7 @@ struct ChangeEmailView: View {
     var body: some View {
         NavigationView {
             Text("Change Email - Coming Soon")
+                .themedScreen()
                 .navigationTitle("Change Email")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -1873,6 +1880,7 @@ struct ChangePasswordView: View {
     var body: some View {
         NavigationView {
             Text("Change Password - Coming Soon")
+                .themedScreen()
                 .navigationTitle("Change Password")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -1888,6 +1896,7 @@ struct TwoFactorView: View {
     var body: some View {
         NavigationView {
             Text("Two-Factor Authentication - Coming Soon")
+                .themedScreen()
                 .navigationTitle("Two-Factor Authentication")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -1908,6 +1917,7 @@ struct BlockedUsersView: View {
                     Text("User: \(userId)")
                 }
             }
+            .themedScreen()
             .navigationTitle("Blocked Users")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -1928,6 +1938,7 @@ struct LegalDocumentView: View {
                 Text(content)
                     .padding()
             }
+            .themedScreen()
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -1951,6 +1962,7 @@ struct LocationSettingsView: View {
     @Binding var location: String
     var body: some View {
         TextField("Location", text: $location)
+            .themedScreen()
             .navigationTitle("Location")
     }
 }
@@ -1973,6 +1985,7 @@ struct ProducerNameView: View {
     @Binding var name: String
     var body: some View {
         TextField("Producer Name", text: $name)
+            .themedScreen()
             .navigationTitle("Producer Name")
     }
 }
@@ -1995,6 +2008,7 @@ struct StudioNameView: View {
     @Binding var name: String
     var body: some View {
         TextField("Studio Name", text: $name)
+            .themedScreen()
             .navigationTitle("Studio Name")
     }
 }
@@ -2046,6 +2060,7 @@ struct EditBioView: View {
                 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Edit Bio")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

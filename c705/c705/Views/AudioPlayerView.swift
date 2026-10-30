@@ -97,7 +97,7 @@ struct AudioPlayerView: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(Theme.card)
         .cornerRadius(16)
         .shadow(radius: 8)
         // When the player appears, start loading and playing the track.

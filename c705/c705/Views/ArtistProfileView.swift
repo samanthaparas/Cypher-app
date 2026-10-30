@@ -145,6 +145,7 @@ struct ArtistProfileView: View {
                 }
             }
         }
+        .themedScreen()
         .navigationTitle("Artist Profile")
         .navigationBarTitleDisplayMode(.inline)
         .task {

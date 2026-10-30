@@ -83,6 +83,7 @@ struct CypherInviteDetailView: View {
                     .padding()
                 }
             }
+            .themedScreen()
             .navigationTitle("Cypher Invite")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

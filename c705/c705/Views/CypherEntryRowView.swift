@@ -15,6 +15,8 @@ import SwiftUI
 // One entry in a cypher: who posted it, its score, a play button, and a vote button.
 struct CypherEntryRowView: View {
     let entry: CypherEntry
+    // The cypher's beat, played under the entry. nil plays the voice alone.
+    var beatUrl: String? = nil
     let onVote: (Int, Int, Int) -> Void
 
     // The app's shared audio player. @ObservedObject makes this row redraw
@@ -48,7 +50,7 @@ struct CypherEntryRowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.user?.username ?? entry.user?.email ?? "Unknown")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                     
                     if let title = entry.title {
                         Text(title)
@@ -136,9 +138,7 @@ struct CypherEntryRowView: View {
             }
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .themeCard(padding: 0)
         // Pops up a message if the audio could not be loaded, for example when
         // the file is not public or the phone is offline.
         .alert("Couldn't play this entry", isPresented: Binding(
@@ -153,7 +153,7 @@ struct CypherEntryRowView: View {
             ReportEntryView(entryId: entry.id)
         }
         .sheet(isPresented: $showVotingSheet) {
-            CypherVotingView(entry: entry) { bars, flow, creativity in
+            CypherVotingView(entry: entry, beatUrl: beatUrl) { bars, flow, creativity in
                 onVote(bars, flow, creativity)
                 hasVoted = true
             }
@@ -166,7 +166,7 @@ struct CypherEntryRowView: View {
         isLoadingAudio = true
         defer { isLoadingAudio = false }
         do {
-            try await player.togglePlayback(urlString: entry.audioUrl)
+            try await player.togglePlayback(urlString: entry.audioUrl, beatURLString: beatUrl)
         } catch {
             audioError = error.localizedDescription
         }
@@ -206,7 +206,7 @@ struct LeaderboardRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.entry.user?.username ?? entry.entry.user?.email ?? "Unknown")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                 
                 if let title = entry.entry.title {
                     Text(title)
@@ -228,7 +228,7 @@ struct LeaderboardRowView: View {
             }
         }
         .padding()
-        .background(entry.rank <= 3 ? Color.orange.opacity(0.1) : Color.white)
+        .background(entry.rank <= 3 ? Color.orange.opacity(0.15) : Theme.card)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
@@ -283,6 +283,7 @@ struct ReportEntryView: View {
                 
                 Spacer()
             }
+            .themedScreen()
             .navigationTitle("Report")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

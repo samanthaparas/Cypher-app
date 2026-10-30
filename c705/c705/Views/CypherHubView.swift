@@ -69,7 +69,7 @@ struct CypherHubView: View {
                         }
                     }
                 }
-                .background(Color.gray.opacity(0.1))
+                .background(Theme.card)
                 .cornerRadius(12)
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -127,11 +127,11 @@ struct CypherHubView: View {
                         HStack {
                             Text("\(announcement.username) is dominating the \(announcement.city) Cypher! Check it out 🔥🔥🔥")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.black)
+                                .foregroundColor(Theme.textPrimary)
                             Spacer()
                         }
                         .padding()
-                        .background(Color(red: 0.98, green: 0.96, blue: 0.92))
+                        .background(Theme.card)
                         .cornerRadius(12)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -145,7 +145,7 @@ struct CypherHubView: View {
                         Spacer()
                     }
                     .padding()
-                    .background(Color(red: 0.98, green: 0.96, blue: 0.92))
+                    .background(Theme.card)
                     .cornerRadius(12)
                     .padding(.horizontal)
                 } else {
@@ -157,12 +157,34 @@ struct CypherHubView: View {
                         Spacer()
                     }
                     .padding()
-                    .background(Color(red: 0.98, green: 0.96, blue: 0.92))
+                    .background(Theme.card)
                     .cornerRadius(12)
                     .padding(.horizontal)
                 }
 
-                if viewModel.isLoading && viewModel.topCyphers.isEmpty {
+                if selectedTab == "All" {
+                    // Every active cypher, newest first, from viewModel.cyphers.
+                    if viewModel.isLoading && viewModel.cyphers.isEmpty {
+                        ProgressView("Loading cyphers...")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else if viewModel.cyphers.isEmpty {
+                        Text("No cyphers yet. Start one!")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(viewModel.cyphers) { cypher in
+                                CypherCardView(cypher: cypher) {
+                                    selectedCypherId = cypher.id
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                } else if viewModel.isLoading && viewModel.topCyphers.isEmpty {
                     ProgressView("Loading cyphers...")
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -173,7 +195,7 @@ struct CypherHubView: View {
                             HStack {
                                 Text("Popular Cyphers")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Theme.textPrimary)
                                 Spacer()
                                 Button(action: {
                                     // TODO: Navigate to view all
@@ -208,6 +230,7 @@ struct CypherHubView: View {
             }
             .padding(.bottom, 20)
         }
+        .themedScreen()
         .navigationTitle("Cypher")
         // Pull down to reload the cyphers and update the banner.
         .refreshable {
@@ -230,8 +253,11 @@ struct CypherHubView: View {
         )) { nav in
             CypherDetailView(cypherId: nav.id)
         }
-        // Slides up the Create Cypher form.
-        .sheet(isPresented: $showCreateCypher) {
+        // Slides up the Create Cypher form, and reloads the lists when it closes so a new
+        // cypher shows up straight away.
+        .sheet(isPresented: $showCreateCypher, onDismiss: {
+            Task { await viewModel.loadCyphers() }
+        }) {
             CreateCypherView()
         }
         // Runs once when the screen first appears: loads the cyphers and then works out the
@@ -436,7 +462,7 @@ struct PopularCypherCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("#\(rank) \(cypher.title)")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                 
                 Text(cypher.host.username ?? cypher.host.email)
@@ -476,9 +502,7 @@ struct PopularCypherCardView: View {
             }
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .themeCard(padding: 0)
         .onTapGesture {
             onTap()
         }
@@ -761,7 +785,7 @@ struct CypherCardView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(cypher.title)
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(Theme.textPrimary)
                         
                         if let description = cypher.description {
                             Text(description)
@@ -798,9 +822,7 @@ struct CypherCardView: View {
                 }
             }
             .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .themeCard(padding: 0)
         }
         .buttonStyle(PlainButtonStyle())
     }

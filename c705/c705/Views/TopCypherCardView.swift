@@ -35,7 +35,7 @@ struct TopCypherCardView: View {
                 
                 Text(topCypher.title)
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(2)
                 
                 if let description = topCypher.description {
@@ -70,9 +70,7 @@ struct TopCypherCardView: View {
             }
             .padding()
             .frame(width: 280)
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .themeCard(padding: 0)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -103,7 +101,7 @@ struct TopCypherRowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(topCypher.title)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Theme.textPrimary)
                         .lineLimit(1)
                     
                     Text("Host: \(topCypher.host.username ?? topCypher.host.email)")
@@ -124,9 +122,7 @@ struct TopCypherRowView: View {
                 Spacer()
             }
             .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+            .themeCard(padding: 0)
         }
         .buttonStyle(PlainButtonStyle())
     }

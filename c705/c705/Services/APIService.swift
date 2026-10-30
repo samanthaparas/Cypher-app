@@ -126,6 +126,13 @@ class APIService {
             // Only log errors, not successful responses
             
             guard (200...299).contains(httpResponse.statusCode) else {
+                // A 401 on a request that carried our token means the saved token is no longer
+                // valid (usually expired). Tell AuthService so it can sign the user out.
+                if httpResponse.statusCode == 401,
+                   request.value(forHTTPHeaderField: "Authorization") != nil {
+                    NotificationCenter.default.post(name: .authTokenRejected, object: nil)
+                }
+
                 // Only log error response body for non-common errors
                 if httpResponse.statusCode != 404 && httpResponse.statusCode != 401 {
                     if let errorString = String(data: data, encoding: .utf8) {
@@ -606,7 +613,46 @@ class APIService {
         
         return try await performRequest(request, responseType: CypherEntry.self)
     }
-    
+
+    // Uploads a beat the creator imported from their phone and returns its link, so everyone
+    // who plays the cypher hears the same beat. It goes in the cyphers folder, which the
+    // bucket lets anyone read.
+    func uploadCypherBeat(audioData: Data, fileName: String) async throws -> String {
+        guard let url = URL(string: "\(baseURL)/s3/upload/cyphers") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let mimeType: String
+        switch (fileName as NSString).pathExtension.lowercased() {
+        case "mp3": mimeType = "audio/mpeg"
+        case "wav": mimeType = "audio/wav"
+        case "aac": mimeType = "audio/aac"
+        default: mimeType = "audio/mp4"
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        struct UploadResponse: Decodable { let url: String }
+        return try await performRequest(request, responseType: UploadResponse.self).url
+    }
+
     func getCypherEntries(cypherId: String, page: Int = 1, limit: Int = 20) async throws -> CypherEntriesResponse {
         guard let request = createRequest(endpoint: "/cyphers/\(cypherId)/entries?page=\(page)&limit=\(limit)") else {
             throw APIError.invalidURL
@@ -1226,18 +1272,25 @@ class APIService {
     }
 }
 
+extension Notification.Name {
+    // Posted when the server rejects the saved login token with 401. AuthService listens for it.
+    static let authTokenRejected = Notification.Name("authTokenRejected")
+}
+
 // The kinds of errors a request can fail with, each with a readable message.
+// LocalizedError makes iOS use errorDescription for error.localizedDescription, even when the
+// error is held as a plain Error, instead of "The operation couldn't be completed".
 // MARK: - API Errors
 
-enum APIError: Error {
+enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
     case httpError(Int)
     case httpErrorWithMessage(Int, String)
     case decodingError(Error)
     case networkError(String)
-    
-    var localizedDescription: String {
+
+    var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid URL"

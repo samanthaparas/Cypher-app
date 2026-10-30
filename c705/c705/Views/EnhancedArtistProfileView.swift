@@ -118,6 +118,7 @@ struct EnhancedArtistProfileView: View {
                 }
             }
         }
+        .themedScreen()
         .navigationTitle("Artist")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -185,7 +186,7 @@ struct ArtistHeaderView: View {
             // Name
             Text(profile.name)
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
             
             // Account Type - Show role under name
             Text(profile.role.capitalized)
@@ -234,7 +235,7 @@ struct StatItem: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
@@ -334,7 +335,7 @@ struct MusicSectionView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Music")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal)
             
             if tracks.isEmpty && !isLoading {
@@ -384,7 +385,7 @@ struct CypherHighlightsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Cypher Highlights")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal)
             
             if isLoading {
@@ -437,7 +438,7 @@ struct CypherHighlightCard: View {
             if let title = entry.title {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
             }
             
@@ -461,7 +462,7 @@ struct CypherHighlightCard: View {
         }
         .padding()
         .frame(width: 150)
-        .background(Color.gray.opacity(0.1))
+        .background(Theme.card)
         .cornerRadius(12)
     }
 }
@@ -475,13 +476,13 @@ struct AboutSectionView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("About")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal)
             
             if let bio = profile.bio, !bio.isEmpty {
                 Text(bio)
                     .font(.system(size: 14))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .lineSpacing(4)
                     .padding(.horizontal)
             } else {
@@ -511,7 +512,7 @@ struct ArtistSocialLinksView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Connect")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
                     .padding(.horizontal)
                 
                 HStack(spacing: 16) {
@@ -587,6 +588,7 @@ struct EditArtistProfileView: View {
     var body: some View {
         NavigationView {
             Text("Edit Profile - Coming Soon")
+                .themedScreen()
                 .navigationTitle("Edit Profile")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -607,6 +609,7 @@ struct ReportArtistView: View {
     var body: some View {
         NavigationView {
             Text("Report Artist - Coming Soon")
+                .themedScreen()
                 .navigationTitle("Report Artist")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

@@ -36,6 +36,8 @@ struct CreateCypherView: View {
     @State private var isCreating = false
     @State private var showError = false
     @State private var errorMessage = ""
+    // Set when the cypher was created but the creator's verse failed to upload; closing the alert closes the screen.
+    @State private var entryUploadError: String?
     @State private var showRecordSheet = false
     @State private var recordedAudioURL: URL?
     @State private var showBeatsDropdown = false
@@ -174,7 +176,7 @@ struct CreateCypherView: View {
                                                     }
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 12)
-                                                    .background(Color(.systemBackground))
+                                                    .background(Theme.card)
                                                 }
                                                 .buttonStyle(PlainButtonStyle())
                                                 
@@ -187,7 +189,7 @@ struct CreateCypherView: View {
                                     }
                                     .frame(maxHeight: 300)
                                 }
-                                .background(Color(.systemBackground))
+                                .background(Theme.card)
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
                                 .padding(.top, 8)
@@ -305,7 +307,7 @@ struct CreateCypherView: View {
                                     .frame(maxHeight: 300)
                                 }
                             }
-                            .background(Color(.systemBackground))
+                            .background(Theme.card)
                             .cornerRadius(12)
                             .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                             .padding(.top, 8)
@@ -389,6 +391,7 @@ struct CreateCypherView: View {
                 }
                 .padding(.vertical, 20)
             }
+            .themedScreen()
             .navigationTitle("Create Cypher")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -403,6 +406,14 @@ struct CreateCypherView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
+            }
+            .alert("Your verse didn't post", isPresented: Binding(
+                get: { entryUploadError != nil },
+                set: { if !$0 { entryUploadError = nil } }
+            )) {
+                Button("OK", role: .cancel) { dismiss() }
+            } message: {
+                Text("The cypher was created, but your recording didn't upload: \(entryUploadError ?? "")")
             }
             // Opens the recorder so the creator can record their own entry over the beat.
             .sheet(isPresented: $showRecordSheet) {
@@ -530,10 +541,20 @@ struct CreateCypherView: View {
         // Get file name
         let fileName = url.lastPathComponent
         
+        // Keep our own copy so the beat can still play after the picker closes.
+        let copy: URL
+        do {
+            copy = try ImportedBeatFiles.importCopy(of: url)
+        } catch {
+            errorMessage = "Failed to import file"
+            showError = true
+            return
+        }
+        
         // Create a ProfileBeat from the imported file
         let importedBeat = ProfileBeat(
             title: fileName.replacingOccurrences(of: ".\(url.pathExtension)", with: ""),
-            localFilePath: url.path,
+            localFilePath: copy.path,
             isImported: true,
             importDate: Date()
         )
@@ -564,10 +585,14 @@ struct CreateCypherView: View {
             
             if beat.isPurchased, let audioUrl = beat.audioUrl {
                 beatUrl = audioUrl
-            } else if beat.isImported, let _ = beat.localFilePath {
-                // For imported beats, we'd need to upload them first
-                // For now, we'll use the purchased beat URL if available
-                beatUrl = nil
+            } else if beat.isImported, let path = beat.localFilePath {
+                // Imported beats only live on this phone, so upload a copy first. If that fails
+                // the cypher isn't created, rather than going live without a beat.
+                guard let fileURL = ImportedBeatFiles.playableURL(for: path),
+                      let beatData = try? Data(contentsOf: fileURL) else {
+                    throw CocoaError(.fileReadNoSuchFile)
+                }
+                beatUrl = try await apiService.uploadCypherBeat(audioData: beatData, fileName: fileURL.lastPathComponent)
             }
             
             // The cypher is public (visible in the Arena) unless the creator picked someone to invite,
@@ -593,6 +618,7 @@ struct CreateCypherView: View {
             }
             
             // If we recorded audio, submit it as an entry
+            var entryError: String?
             if let audioURL = recordedAudioURL, let audioData = try? Data(contentsOf: audioURL) {
                 do {
                     let fileName = "cypher-entry-\(Date().timeIntervalSince1970).m4a"
@@ -603,14 +629,19 @@ struct CreateCypherView: View {
                         title: nil
                     )
                 } catch {
-                    print("Failed to submit entry: \(error)")
-                    // Continue even if entry submission fails
+                    entryError = error.localizedDescription
                 }
+            } else if recordedAudioURL != nil {
+                entryError = "the recording file couldn't be read."
             }
             
             await MainActor.run {
                 isCreating = false
-                dismiss()
+                if let entryError {
+                    entryUploadError = entryError
+                } else {
+                    dismiss()
+                }
             }
         } catch {
             await MainActor.run {
@@ -646,103 +677,64 @@ struct ModernTextFieldStyle: TextFieldStyle {
 // MARK: - Search User Model (moved to separate file for reuse)
 
 // MARK: - Record Over Beat View
-// A recording screen that is tied to a specific beat. When the recording is done it hands the
-// file back to the form.
+// A recording screen that is tied to a specific beat. The beat loops as a preview, restarts
+// from the top when the take starts, and after Stop the artist listens back with the beat
+// underneath. Use This Take sends the file back to the form; Retake throws it away.
 struct RecordOverBeatView: View {
     let beat: ProfileBeat
     let onRecordingComplete: (URL) -> Void
     @Environment(\.dismiss) var dismiss
     @StateObject private var recorder = AudioRecorderService.shared
-    @State private var isUploading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var beatState: BeatLoadState = .loading
+    // The beat's location once it has loaded, so the listen-back can play it under the take.
+    @State private var loadedBeatURL: URL?
+    // Countdown or Instant. Shared with the Record Entry screen through the same key.
+    @AppStorage("recordWithCountdown") private var useCountdown = true
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                Text("Record over: \(beat.title)")
-                    .font(.headline)
-                    .padding()
-                
-                // Recording Status
-                VStack(spacing: 16) {
-                    if recorder.isRecording {
-                        ZStack {
-                            Circle()
-                                .fill(Color.red.opacity(0.2))
-                                .frame(width: 120, height: 120)
-                            
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 100, height: 100)
-                            
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(.white)
-                        }
+            ScrollView {
+                VStack(spacing: 24) {
+                    BeatPreviewCard(title: beat.title, state: beatState, recorder: recorder)
+                    
+                    RecordingStatusView(recorder: recorder)
+                        .padding(.top, 8)
+                    
+                    if let take = recorder.getRecordingURL() {
+                        // After Stop: listen back with the beat, then Retake or attach it.
+                        TakeReviewPanel(
+                            takeURL: take,
+                            beatURL: loadedBeatURL,
+                            useLabel: "Use This Take",
+                            isBusy: false,
+                            onRetake: { recorder.discardLastRecording() },
+                            onUse: { onRecordingComplete(take) }
+                        )
+                    } else if !recorder.isAligningTake {
+                        CountdownModePicker(
+                            useCountdown: $useCountdown,
+                            isLocked: recorder.isRecording || recorder.countdownValue != nil
+                        )
                         
-                        Text("Recording...")
-                            .font(.headline)
-                            .foregroundColor(.red)
-                        
-                        Text(timeString(recorder.recordingTime))
-                            .font(.system(size: 32, weight: .bold))
-                    } else {
-                        ZStack {
-                            Circle()
-                                .fill(Color.blue.opacity(0.2))
-                                .frame(width: 120, height: 120)
-                            
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.blue)
-                        }
-                        
-                        Text("Ready to Record")
-                            .font(.headline)
-                    }
-                }
-                .padding(.top, 40)
-                
-                // Controls
-                HStack(spacing: 40) {
-                    if recorder.isRecording {
-                        Button(action: {
-                            if let url = recorder.stopRecording() {
-                                onRecordingComplete(url)
-                            }
-                        }) {
-                            VStack {
-                                Image(systemName: "stop.circle.fill")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.red)
-                                Text("Stop")
-                                    .font(.caption)
-                            }
-                        }
-                    } else {
-                        Button(action: {
-                            do {
-                                try recorder.startRecording()
-                            } catch {
+                        RecordControls(
+                            recorder: recorder,
+                            useCountdown: useCountdown,
+                            onError: { error in
                                 errorMessage = error.localizedDescription
                                 showError = true
                             }
-                        }) {
-                            VStack {
-                                Image(systemName: "record.circle.fill")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.red)
-                                Text("Record")
-                                    .font(.caption)
-                            }
-                        }
-                        .disabled(!recorder.hasPermission)
+                        )
+                        
+                        HeadphonesTip()
                     }
                 }
-                
-                Spacer()
+                .padding(.vertical)
             }
+            // Stretch to the full sheet so the navy background reaches both edges.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .themedScreen()
             .navigationTitle("Record Over Beat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -759,6 +751,7 @@ struct RecordOverBeatView: View {
                 Text(errorMessage)
             }
             .task {
+                recorder.clearLastRecording()
                 if !recorder.hasPermission {
                     let granted = await recorder.requestPermission()
                     if !granted {
@@ -766,13 +759,66 @@ struct RecordOverBeatView: View {
                         showError = true
                     }
                 }
+                await loadBeat()
+            }
+            // Swiping the sheet away skips the Cancel button, so stop everything here too.
+            .onDisappear {
+                recorder.cancelRecording()
+                recorder.unloadBeat()
             }
         }
     }
     
-    private func timeString(_ time: TimeInterval) -> String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+    // A bought beat streams from its link; an imported one plays from the app's own copy.
+    private func loadBeat() async {
+        let source: URL?
+        if let link = beat.audioUrl {
+            source = URL(string: link)
+        } else if let path = beat.localFilePath {
+            source = ImportedBeatFiles.playableURL(for: path)
+        } else {
+            source = nil
+        }
+        
+        guard let url = source else {
+            beatState = .failed("Re-import this beat from Files to hear it.")
+            return
+        }
+        do {
+            try await recorder.loadBeat(from: url)
+            loadedBeatURL = url
+            beatState = .ready
+        } catch {
+            beatState = .failed("Couldn't load the beat. You can still record.")
+        }
+    }
+}
+
+// Imported beats are copied into the app's own folder. The original in the Files app can only
+// be read while the picker's permission lasts, which ends as soon as the import finishes.
+enum ImportedBeatFiles {
+    static var directory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("ImportedBeats", isDirectory: true)
+    }
+    
+    // Copies a picked file in and returns the copy's location.
+    static func importCopy(of url: URL) throws -> URL {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let copy = directory.appendingPathComponent(url.lastPathComponent)
+        try? FileManager.default.removeItem(at: copy)
+        try FileManager.default.copyItem(at: url, to: copy)
+        return copy
+    }
+    
+    // Finds a saved beat. It checks the copy folder by file name too, because the app's folder
+    // path can change when the app is reinstalled.
+    static func playableURL(for savedPath: String) -> URL? {
+        let saved = URL(fileURLWithPath: savedPath)
+        if FileManager.default.isReadableFile(atPath: saved.path) {
+            return saved
+        }
+        let copy = directory.appendingPathComponent(saved.lastPathComponent)
+        return FileManager.default.isReadableFile(atPath: copy.path) ? copy : nil
     }
 }

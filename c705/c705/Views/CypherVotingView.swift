@@ -13,6 +13,8 @@ import SwiftUI
 
 struct CypherVotingView: View {
     let entry: CypherEntry
+    // The cypher's beat, played under the entry. nil plays the voice alone.
+    var beatUrl: String? = nil
     // Called when the vote is submitted. The three numbers are the scores.
     let onVote: (Int, Int, Int) -> Void
     @Environment(\.dismiss) var dismiss
@@ -69,7 +71,7 @@ struct CypherVotingView: View {
                             Button(action: {
                                 Task {
                                     do {
-                                        try await player.togglePlayback(urlString: entry.audioUrl)
+                                        try await player.togglePlayback(urlString: entry.audioUrl, beatURLString: beatUrl)
                                     } catch {
                                         audioError = error.localizedDescription
                                     }
@@ -107,7 +109,7 @@ struct CypherVotingView: View {
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Theme.card)
                     .cornerRadius(12)
                     .padding(.horizontal)
                     
@@ -143,9 +145,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                         
                         // Flow Rating
                         VStack(alignment: .leading, spacing: 8) {
@@ -172,9 +172,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                         
                         // Creativity Rating
                         VStack(alignment: .leading, spacing: 8) {
@@ -201,9 +199,7 @@ struct CypherVotingView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .themeCard(padding: 0)
                     }
                     .padding(.horizontal)
                     
@@ -238,6 +234,7 @@ struct CypherVotingView: View {
                     .padding(.bottom, 20)
                 }
             }
+            .themedScreen()
             .navigationTitle("Vote")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

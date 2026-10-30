@@ -87,8 +87,9 @@ struct CommentsView: View {
                     .disabled(viewModel.newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isPosting)
                 }
                 .padding()
-                .background(Color(.systemBackground))
+                .background(Theme.card)
             }
+            .themedScreen()
             .navigationTitle("Comments")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -7,7 +7,8 @@
 //  PURPOSE: The one audio player the whole app shares. It downloads a sound
 //  file, plays it, and tells the screens what is happening (playing, paused,
 //  how far along). It can play a Track (loadTrack) or any other audio URL,
-//  such as a cypher entry (loadAudio / togglePlayback).
+//  such as a cypher entry (loadAudio / togglePlayback). An entry can bring
+//  its cypher's beat along, which plays underneath in step with the voice.
 //
 
 import Foundation
@@ -39,6 +40,11 @@ class AudioPlayerService: NSObject, ObservableObject {
 
     // AVAudioPlayer is Apple's built-in class that actually makes the sound.
     private var audioPlayer: AVAudioPlayer?
+    // The beat under a cypher entry, kept in step with audioPlayer. nil when there is no beat.
+    // It never gets this service as its delegate, so only the voice ending counts as finished.
+    private var beatPlayer: AVAudioPlayer?
+    // The beat a little under the voice so the bars stay easy to hear.
+    private let beatVolume: Float = 0.8
     private var timer: Timer?
     private var audioSession: AVAudioSession = AVAudioSession.sharedInstance()
     
@@ -144,13 +150,18 @@ class AudioPlayerService: NSObject, ObservableObject {
     // not a Track. "async" means it waits for the download without freezing
     // the screen. @MainActor makes it run on the main thread, which is where
     // changes to @Published values must happen.
+    // beatURLString is the cypher's beat. It downloads alongside the voice and loops under it.
+    // If only the beat fails to load, the voice still plays on its own.
     @MainActor
-    func loadAudio(urlString: String) async throws {
+    func loadAudio(urlString: String, beatURLString: String? = nil) async throws {
         stop()
         guard let url = URL(string: urlString) else {
             throw AudioPlayerError.invalidURL
         }
         currentURL = urlString
+
+        // Start the beat download now so both arrive at about the same time.
+        async let beatData = Self.downloadBeat(beatURLString)
 
         let (data, response) = try await URLSession.shared.data(from: url)
         // A file that is not public comes back as an error page, not audio.
@@ -158,6 +169,7 @@ class AudioPlayerService: NSObject, ObservableObject {
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             throw AudioPlayerError.loadFailed
         }
+        let downloadedBeat = await beatData
 
         // If the user tapped a different entry while this one was downloading,
         // drop this download so it does not take over the player.
@@ -167,16 +179,33 @@ class AudioPlayerService: NSObject, ObservableObject {
         audioPlayer?.delegate = self
         audioPlayer?.prepareToPlay()
         duration = audioPlayer?.duration ?? 0
+
+        if let downloadedBeat, let beat = try? AVAudioPlayer(data: downloadedBeat) {
+            beat.numberOfLoops = -1 // loop if the verse runs longer than the beat
+            beat.volume = beatVolume
+            beat.prepareToPlay()
+            beatPlayer = beat
+        }
+    }
+
+    // Gets the beat's audio, or nil when there is no beat or it can't be fetched.
+    private static func downloadBeat(_ urlString: String?) async -> Data? {
+        guard let urlString, let url = URL(string: urlString) else { return nil }
+        guard let (data, response) = try? await URLSession.shared.data(from: url) else { return nil }
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            return nil
+        }
+        return data
     }
 
     // One call for a play/pause button: pauses if it is playing, resumes if it
     // is paused, and downloads it first if it has not been loaded yet.
     @MainActor
-    func togglePlayback(urlString: String) async throws {
+    func togglePlayback(urlString: String, beatURLString: String? = nil) async throws {
         if currentURL == urlString, audioPlayer != nil {
             isPlaying ? pause() : play()
         } else {
-            try await loadAudio(urlString: urlString)
+            try await loadAudio(urlString: urlString, beatURLString: beatURLString)
             play()
         }
     }
@@ -186,7 +215,15 @@ class AudioPlayerService: NSObject, ObservableObject {
         
         do {
             try audioSession.setActive(true)
-            player.play()
+            if let beat = beatPlayer, beat.duration > 0 {
+                // Put the beat where the voice is, then start both on the same audio-clock tick.
+                beat.currentTime = player.currentTime.truncatingRemainder(dividingBy: beat.duration)
+                let startAt = player.deviceCurrentTime + 0.05
+                player.play(atTime: startAt)
+                beat.play(atTime: startAt)
+            } else {
+                player.play()
+            }
             isPlaying = true
             startTimer()
             updateNowPlayingInfo()
@@ -197,6 +234,7 @@ class AudioPlayerService: NSObject, ObservableObject {
     
     func pause() {
         audioPlayer?.pause()
+        beatPlayer?.pause()
         isPlaying = false
         stopTimer()
         updateNowPlayingInfo()
@@ -206,6 +244,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     func stop() {
         audioPlayer?.stop()
         audioPlayer = nil
+        beatPlayer?.stop()
+        beatPlayer = nil
         isPlaying = false
         currentTime = 0
         duration = 0
@@ -217,6 +257,9 @@ class AudioPlayerService: NSObject, ObservableObject {
     func seek(to time: TimeInterval) {
         guard let player = audioPlayer else { return }
         player.currentTime = time
+        if let beat = beatPlayer, beat.duration > 0 {
+            beat.currentTime = time.truncatingRemainder(dividingBy: beat.duration)
+        }
         currentTime = time
         updateNowPlayingInfo()
     }
@@ -279,6 +322,9 @@ extension AudioPlayerService: AVAudioPlayerDelegate {
         // Remember which audio just finished. iOS only calls this when the audio reaches its end
         // (flag is true), not when it is stopped early, so only complete listens are recorded.
         if flag, let url = currentURL { finishedURLs.insert(url) }
+        // The verse is over, so the beat under it stops too.
+        beatPlayer?.stop()
+        beatPlayer?.currentTime = 0
         isPlaying = false
         currentTime = 0
         stopTimer()

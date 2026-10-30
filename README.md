@@ -10,6 +10,7 @@ The project is an iOS app (SwiftUI) backed by a NestJS API, a PostgreSQL databas
 
 ## Table of contents
 
+0. [Project status: done, next, blockers and timeline](#0-project-status-done-next-blockers-and-timeline)
 1. [What the app is for](#1-what-the-app-is-for)
 2. [Who it serves](#2-who-it-serves)
 3. [Features: built, partial, planned](#3-features-built-partial-planned)
@@ -23,6 +24,78 @@ The project is an iOS app (SwiftUI) backed by a NestJS API, a PostgreSQL databas
 11. [Design system](#11-design-system)
 12. [Working in this repository](#12-working-in-this-repository)
 13. [Documentation index](#13-documentation-index)
+
+---
+
+## 0. Project status: done, next, blockers and timeline
+
+*As of October 27, 2026. The day-to-day tracker is the shared "Cypher" Google Sheet (Launch Overview, Action Log, Launch Roadmap and Launch Checklist tabs). This section is the summary.*
+
+**In one line:** the core loop works end to end in the iPhone Simulator against a local backend: record a verse over a beat, review it, post it, and anyone can play the vocal and beat together and vote. **Nothing is live yet.** There is no hosted backend, so beta testers can't use the app.
+
+**Version 1.0 scope** (decided with Jay, Oct 4 and Oct 26): Arena-first. That means sign-in, profiles, cyphers (create, join, vote, report), discovery, articles, free beats used in cyphers, and a basic engineer page (profile plus "request a session"). Beat sales, subscriptions, payouts, prices and fees wait for 1.1.
+
+### Done so far
+
+| When | What | Where |
+|---|---|---|
+| Sep 22–28 | Removed hard-coded AWS and database credentials from the code; the server refuses to start without its secrets. Fixed the build errors and the `user.userId` bug. Added the engineer booking backend. | Jay's repo, PRs #1–#2 |
+| Sep 30 | Local setup works on a Mac: Xcode, iPhone Simulator, Postgres, backend on `localhost:3000`. | — |
+| Oct 1–10 | Design reference and tokens (`Theme`), custom five-tab bar, dark Home, shared `PillButton` / `CardStyle`, this README and the refactor audit, friendlier empty states, and a working **Delete Account** (backend route plus app button). | Fork PRs #1–#10 |
+| Oct 15 | Minimum iOS lowered from 26.2 to **17.0**, so most testers' phones can install the app. Login photo and status-bar fixes. | Fork PRs #11–#14 |
+| Oct 27 | Arena Popular and search routes fixed; new cyphers are public. **Listen before voting:** an entry must play to the end before you can vote. | Fork PRs #15–#16 |
+| Oct 27 | Arena Top and All lists, sign-out on an expired login, readable error messages, dark theme on **every** screen, and a Home dashboard that follows Jay's mockup. | Fork PR #17 |
+| Oct 27 | **Recorder:** beat preview loop, 3-2-1 countdown or Instant start, beat restarts in sync, delay-compensated takes, and a headphones tip. **Review:** listen back with the beat, then Retake or Use. **Playback:** every verse plays with its beat underneath. | Fork PR #17 |
+| Oct 27 | **Uploads:** new AWS account in Jay's name (`jmacmedia`) with bucket `c705-media-beta` (us-east-2). Removed the per-file ACL the new bucket rejects. Imported beats are now uploaded. A failed verse upload now shows an error. Tested end to end. | Fork PR #17, AWS console |
+| Oct 27 | Found the app in Jay's App Store Connect: **C705 Beta**, bundle ID `online.c705.cypher`. Its old build 1 has expired. | App Store Connect |
+
+All app work since Oct 2 lives on the fork (`samanthaparas/Cypher-app`). It has **not** been sent to Jay's repository yet.
+
+### What still needs to be done
+
+**Before the beta** (testers can't install or use the app without these):
+1. Put the backend and database online, and point the app's default address at them.
+2. Apple: confirm Samantha's App Store Connect access and Jay's Team ID, set them in Xcode, and bump the build number to **2**.
+3. Publish a privacy policy page (drafts were written Oct 26). External TestFlight testers need one.
+4. Fix the cypher page for someone who has already posted: hide Record Your Entry and the vote button on their own entry.
+5. Add starter content (a few cyphers and free beats) and a demo account.
+
+**Before App Store submission:**
+1. Build the basic engineer page (profile, request form, the engineer's incoming requests).
+2. Delete Account: also delete the user's S3 files and revoke the Sign in with Apple token.
+3. Publish the Terms, Privacy and Community Guidelines pages, a support contact, and written report rules.
+4. Turn off `NSAllowsArbitraryLoads`, add a privacy manifest, and test on a real iPhone.
+5. Hide or finish the buttons that do nothing yet (Guideline 2.1). Check Sign in with Apple and Google on a device.
+
+**Later (1.1):** beat sales with server-side receipt checks, signed links for beat-store beats (the `beats/` folder is private), subscriptions and payouts.
+
+### Blockers, and how to get past them
+
+| Blocker | Why it blocks | Way past it | Who |
+|---|---|---|---|
+| **No hosted backend** | Testers can't reach a server on Samantha's Mac. | Render web service (about $7/month always-on for the beta) plus a free Neon or Supabase Postgres. Use Render's own `https://…onrender.com` address, so it doesn't wait on the domain. | Jay: OK the cost. Samantha: deploy. |
+| **Apple access and Team ID unconfirmed** | Samantha can't upload builds or invite testers. The project lists two Team IDs (`JA3JADS429`, `393UJB469G`). | Jay accepts any pending agreement, invites Samantha as Admin under Users and Access, and reads the Team ID from developer.apple.com, Membership details. | Jay |
+| **`c705.online` is controlled by the old developer** | The app's default address and the legal-page links point there. `api.c705.online` serves another site's certificate. | For the beta, use the host's address and put the legal pages on a free static host (GitHub Pages or Netlify). Ask the old developer to transfer the domain before launch, or buy a new one (about $15/year). | Jay, with the old developer |
+| **The old developer still holds old resources** | The old AWS key and bucket, the DigitalOcean server, and the Sign in with Apple and Google setups are in his accounts. | AWS is already rebuilt under Jay. Re-create the Sign in with Apple key and Google client under Jay's accounts. Ask him to delete the old key and say whether the old database held real user data. | Jay |
+| **Privacy policy not published** | Required for external TestFlight testers and for the App Store. | Fill in the Oct 26 drafts and publish them on the static host. Have a lawyer read them before launch. | Samantha, then Jay |
+| **Engineer page is new 1.0 scope** | App Store submission waits for it (about 3–5 weeks of app work). | Start the beta without it and ship it in a later TestFlight build. | Samantha |
+
+### Timeline
+
+The original beta date (about Oct 18) passed while the accounts and hosting were sorted out. The plan below was re-baselined on Oct 27. The Launch Roadmap tab recalculates from one start-date cell, now set to Oct 12.
+
+| Dates | Phase | What happens |
+|---|---|---|
+| Oct 26 – Nov 1 | Hosting | Backend and database online, app pointed at them, Team ID and build 2 set |
+| Oct 26 – Nov 15 | App fixes | Blockers above, plus the engineer page started |
+| Nov 2 – 15 | Pages and first build | Privacy page live, starter content, first TestFlight build, internal test, Apple beta review (usually 1–2 days) |
+| **Nov 16 – 29** | **Beta** | First 5–10 testers from Jay's group (they were told "mid-November"), then about 20. Feedback, then new builds. |
+| Nov 30 – Dec 13 | Submit | App Store submission and review |
+| Dec 14 – 27 | Release | Release manually, then watch crashes, reports and hosting daily |
+
+**Deadlines:** no outside launch date is set; Jay hasn't named one. Hard limits: TestFlight builds expire after **90 days**, and login tokens last **7 days**. Apple's review slows over the late-December holidays, so if submission slips past about Dec 18, plan the release for early January.
+
+**Testers need:** an iPhone on iOS 17 or newer, to be 18 or older, and to send their name and Apple ID email. The invite arrives through the free TestFlight app.
 
 ---
 
@@ -75,8 +148,9 @@ Legend: ✅ built (code exists in app and backend) · 🟡 partial / needs verif
 | Feature | Status | Notes |
 |---|---|---|
 | Create a cypher: open, competitive, or beat-locked | ✅ | Public or invite-only; start/end dates |
-| Record or upload an entry into a cypher | ✅ | One entry per artist per cypher |
-| Community voting on **bars / flow / creativity** (1-5 each) | ✅ / 🟡 | Built; see the score-storage concern in [section 5](#5-concerns-and-how-to-fix-them) |
+| Record or upload an entry into a cypher | ✅ | One entry per artist per cypher. Record over the beat with a preview loop, a countdown or instant start, and a delay-compensated take. Review the take with the beat, then retake or post. |
+| Entries play with the cypher's beat underneath | ✅ | The beat plays at 80% volume under the vocal |
+| Community voting on **bars / flow / creativity** (1-5 each) | ✅ / 🟡 | You must listen to the whole entry before voting. See the score-storage concern in [section 5](#5-concerns-and-how-to-fix-them) |
 | Per-cypher leaderboard | ✅ | |
 | "Top cyphers" by week | ✅ | Ranking by entries, votes, and unique artists |
 | Invite artists to a cypher; accept / decline | ✅ | |
@@ -161,8 +235,8 @@ Severity: 🔴 fix before real users or real money · 🟠 fix soon · 🟡 impr
 | # | Sev | Concern | Where | How to fix |
 |---|---|---|---|---|
 | 1 | 🔴 | **Apple receipts are not verified.** The server records whatever receipt string the app sends (`// TODO: Validate Apple receipt`). Anyone able to call the API could "buy" beats or a subscription without paying. | `c705-backend/src/beats/beats.service.ts`, subscriptions service | Verify purchases server-side using Apple's App Store Server API (or StoreKit 2 signed transactions) before granting access. Reject unverifiable receipts. |
-| 2 | 🔴 | **JWT secret has a hard-coded fallback** (`'your-secret-key-change-in-production'`). If `JWT_SECRET` is ever missing in production, anyone who reads this public repo can forge login tokens. | `auth.module.ts`, `jwt.strategy.ts` | Remove the fallback and make the server **refuse to start** without `JWT_SECRET`. Use a long random secret. |
-| 3 | 🔴 | **A fallback database URL with a username and password is hard-coded** in the Prisma config. It points at `localhost`, but credentials in a public repo are a bad habit and may be reused elsewhere. | `c705_db/prisma.config.ts` | Remove the fallback so `DATABASE_URL` must come from the environment. **If that password is used anywhere else, change it now** (git history keeps old values). |
+| 2 | ✅ | **Fixed:** the JWT secret no longer has a hard-coded fallback. The server refuses to start without `JWT_SECRET`. | `auth.module.ts` | Use a long random secret in production. |
+| 3 | 🟠 | **Fixed in code:** the fallback database URL is gone, so `DATABASE_URL` must come from the environment. The old password is still in git history. | `c705_db/prisma.config.ts` | Change that password wherever it is still used. Find out whether that database held real user data. |
 | 4 | 🟠 | **CORS allows every origin, and there is no rate limiting or security-header middleware.** Login and sign-up endpoints can be hammered for password guessing. | `main.ts`; no throttler/helmet dependency | Restrict CORS to known origins, add `@nestjs/throttler` (especially on auth routes) and `helmet`. |
 | 5 | 🟠 | **Validation is permissive.** `ValidationPipe` runs with defaults, so unexpected extra fields are not stripped or rejected. | `main.ts` | Use `new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })`. |
 | 6 | 🟠 | **App logs may contain sensitive details.** The iOS app prints heavily (~150 `print` calls, including auth flows). | `APIService`, `AuthService` | Use Apple's `Logger`, never log tokens, receipts, or personal data, and strip debug logging from release builds. |
@@ -182,7 +256,7 @@ Severity: 🔴 fix before real users or real money · 🟠 fix soon · 🟡 impr
 
 | # | Sev | Concern | Where | How to fix |
 |---|---|---|---|---|
-| 13 | 🟠 | **iOS deployment target is 26.2**, which excludes anyone not on the newest iOS. | Xcode project | Lower the minimum to the oldest version the code supports (test it), to widen the audience. |
+| 13 | ✅ | **Fixed:** the minimum iOS version was lowered from 26.2 to **17.0** (Oct 15), the oldest version the code supports. | Xcode project | Still test once on an iOS 17 device or simulator. |
 | 14 | 🟠 | **Music licensing and copyright are unaddressed.** Hip-hop involves beats, samples, and covers. There are no license terms for beat purchases, no sample/copyright policy, and no takedown process. | product-wide | Define beat license types (lease vs. exclusive), add terms of use and a takedown/DMCA process, and state what rights buyers receive. Consult a lawyer familiar with music. |
 | 15 | 🟠 | **No LICENSE file.** The repository is public and was forked, but has no license, which leaves usage rights unclear. | repo root | Confirm ownership and intent with the original authors, then add an appropriate license. |
 | 16 | 🟡 | **Analytics is a stub.** Events are logged to the console and `UserDefaults` only, so there is no real insight into usage or retention. | `AnalyticsService.swift` | Integrate a real analytics tool (privacy-conscious), define the key funnel, and respect App Tracking Transparency rules. |
@@ -340,7 +414,7 @@ Create `c705-backend/.env` (it is git-ignored). The backend reads:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Secret for signing login tokens (**use a long random value**) |
 | `PORT` | Server port (defaults to 3000) |
-| `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` | S3 uploads |
+| `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` | S3 uploads. The beta bucket is `c705-media-beta` in `us-east-2`, in Jay's AWS account. Its access key can only put, get and delete files in that bucket. A bucket policy (set in the AWS console, not in code) lets anyone read `cyphers/` and `music/` by link; `beats/` stays private. Without that policy, uploads work but the app can't play them back. |
 | `NEWS_API_KEY`, `GNEWS_API_KEY` | News feed (without these the news section is empty and the server logs warnings) |
 
 Never commit real values.
@@ -471,4 +545,4 @@ The target look is captured in [`docs/design/`](docs/design/README.md) (mockup i
 
 ---
 
-*Last reviewed: 2026-10-04.*
+*Last reviewed: 2026-10-27.*
