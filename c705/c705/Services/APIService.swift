@@ -40,7 +40,7 @@ class APIService {
         }
 
         // The default address when nothing else is set.
-        return "https://api.c705.online"
+        return "https://c705-api.onrender.com"
     }
     
     // The login token. Once set, it is attached to every request so the server knows who is
