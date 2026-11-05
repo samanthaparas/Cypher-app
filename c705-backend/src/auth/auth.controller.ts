@@ -24,12 +24,12 @@ export class AuthController {
 
   @Post('oauth/apple')
   async signInWithApple(@Body() oauthDto: OAuthSignInDto): Promise<AuthResponseDto> {
-    return this.authService.signInWithOAuth(oauthDto);
+    return this.authService.signInWithApple(oauthDto);
   }
 
   @Post('oauth/google')
   async signInWithGoogle(@Body() oauthDto: OAuthSignInDto): Promise<AuthResponseDto> {
-    return this.authService.signInWithOAuth(oauthDto);
+    return this.authService.signInWithGoogle(oauthDto);
   }
 
   @Post('update-role')

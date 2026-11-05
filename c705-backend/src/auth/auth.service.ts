@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,6 +9,10 @@ import { OAuthSignInDto } from './dto/oauth-signin.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Role as RoleEnum } from '../../../c705_db/generated/prisma/enums';
 import { JournalistInvitesService } from '../journalist-invites/journalist-invites.service';
+import { OAuthTokenVerifier, VerifiedIdentity } from './oauth-token-verifier.service';
+import { isSelfServiceRole } from './constants/self-service-roles';
+
+type OAuthProvider = 'apple' | 'google';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +20,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private journalistInvitesService: JournalistInvitesService,
+    private oauthTokenVerifier: OAuthTokenVerifier,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<AuthResponseDto> {
@@ -40,18 +46,15 @@ export class AuthService {
       }
     }
 
-    // Validate and set role (default to ARTIST if not provided)
-    let userRole = role && Object.values(RoleEnum).includes(role as RoleEnum) 
-      ? (role as RoleEnum) 
-      : RoleEnum.ARTIST;
+    // Role: ARTIST unless the person picks another self-service role. JOURNALIST needs a valid
+    // invite code. ADMIN can never be chosen here; it is only granted by scripts/create-admin.ts.
+    const userRole: RoleEnum = role ?? RoleEnum.ARTIST;
 
-    // SECURITY: Journalist role requires access code
     if (userRole === RoleEnum.JOURNALIST) {
       if (!accessCode) {
         throw new ForbiddenException('Journalist accounts require a valid access code');
       }
 
-      // Verify the access code
       try {
         await this.journalistInvitesService.verifyAndUseInvite(
           { accessCode },
@@ -60,14 +63,8 @@ export class AuthService {
       } catch (error) {
         throw new ForbiddenException('Invalid or expired access code. Journalist accounts require a valid access code.');
       }
-    } else {
-      // If trying to sign up as journalist without access code, block it
-      if (role === RoleEnum.JOURNALIST && !accessCode) {
-        throw new ForbiddenException('Journalist accounts require a valid access code');
-      }
-
-      // If access code is provided but role is not journalist, ignore the code
-      // (This allows flexibility for future use cases)
+    } else if (!isSelfServiceRole(userRole)) {
+      throw new ForbiddenException('This account type cannot be chosen at signup');
     }
 
     // Hash password - NEVER store raw passwords
@@ -143,160 +140,125 @@ export class AuthService {
     };
   }
 
-  async signInWithOAuth(oauthDto: OAuthSignInDto): Promise<AuthResponseDto> {
-    const { provider, identityToken, email, fullName, role } = oauthDto;
+  async signInWithApple(oauthDto: OAuthSignInDto): Promise<AuthResponseDto> {
+    // Check the token before anything else. Nothing the client sends is trusted until
+    // Apple's signature, issuer, audience (our bundle ID) and expiry all check out.
+    this.requireToken(oauthDto.identityToken);
+    const identity = await this.oauthTokenVerifier.verifyApple(oauthDto.identityToken);
+    return this.signInWithProvider('apple', identity, oauthDto);
+  }
 
-    // Log incoming request for debugging
-    console.log('🔐 OAuth Sign In Request:', {
-      provider,
-      hasEmail: !!email,
-      hasFullName: !!fullName,
-      role: role || 'ARTIST',
-      tokenLength: identityToken?.length || 0
-    });
+  async signInWithGoogle(oauthDto: OAuthSignInDto): Promise<AuthResponseDto> {
+    this.requireToken(oauthDto.identityToken);
+    const identity = await this.oauthTokenVerifier.verifyGoogle(oauthDto.identityToken);
+    return this.signInWithProvider('google', identity, oauthDto);
+  }
 
-    // Validate provider
-    if (provider !== 'apple' && provider !== 'google') {
-      console.error('❌ Invalid OAuth provider:', provider);
-      throw new BadRequestException('Invalid OAuth provider. Must be "apple" or "google"');
-    }
-
-    // Validate identity token
+  private requireToken(identityToken: string | undefined) {
     if (!identityToken || identityToken.trim().length === 0) {
-      console.error('❌ Missing or empty identity token');
       throw new BadRequestException('Identity token is required');
-    }
-
-    // For OAuth sign-in, don't require role - allow user to select later
-    // Only use provided role if it's valid, otherwise default to ARTIST (can be changed later)
-    const userRole = role && Object.values(RoleEnum).includes(role as RoleEnum)
-      ? (role as RoleEnum)
-      : RoleEnum.ARTIST; // Default to ARTIST, but user can change it
-
-    // For OAuth, we need to verify the token and extract user info
-    // In a production app, you would verify the identity token with Apple/Google
-    // For now, we'll use the email from the token to find or create the user
-    
-    // Generate a secure password for OAuth users (they won't use it, but we need it in the DB)
-    // In production, you might want to make password optional for OAuth users
-    const oauthPassword = await bcrypt.hash(identityToken + Date.now(), 10);
-
-    // Determine user email - handle Apple Sign In where email may not be provided
-    let userEmail = email;
-    
-    if (!userEmail) {
-      // For Apple Sign In, email may not be provided on subsequent sign-ins
-      // Generate a placeholder email based on the identity token
-      // In production, you should decode the JWT to get the user ID (sub claim)
-      // and use that to identify users consistently
-      const tokenPrefix = identityToken.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '');
-      userEmail = `${provider}_${tokenPrefix}@${provider}-signin.local`;
-    }
-
-    // Try to find existing user by email
-    let user: any;
-    try {
-      user = await this.prisma.user.findUnique({
-        where: { email: userEmail },
-      });
-      console.log('🔍 User lookup result:', user ? 'User found' : 'New user');
-    } catch (error) {
-      console.error('❌ Database error during user lookup:', error);
-      throw new BadRequestException('Database error. Please try again.');
-    }
-
-    if (user) {
-      // User exists (either from previous OAuth signup or email/password signup)
-      // Allow them to sign in - this handles both signup and signin scenarios
-      console.log('✅ Existing user found, generating token');
-      const payload = { sub: user.id, email: user.email, role: user.role, username: user.username };
-      const access_token = await this.jwtService.signAsync(payload);
-
-      return {
-        access_token,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-        },
-        isNewUser: false, // Existing user
-      };
-    }
-
-    // User doesn't exist - create new account (signup scenario)
-    // Generate a unique username if fullName is available, otherwise leave null
-    let userUsername: string | null = null;
-    if (fullName) {
-      const baseUsername = fullName.replace(/\s/g, '').toLowerCase();
-      userUsername = baseUsername + '-' + Math.random().toString(36).substring(2, 7);
-      
-      // Check if username already exists and generate a new one if needed
-      let attempts = 0;
-      while (attempts < 5) {
-        const existingUsername = await this.prisma.user.findUnique({ 
-          where: { username: userUsername } 
-        });
-        if (!existingUsername) {
-          break; // Username is available
-        }
-        userUsername = baseUsername + '-' + Math.random().toString(36).substring(2, 7);
-        attempts++;
-      }
-      
-      // If we couldn't generate a unique username after 5 attempts, set to null
-      if (attempts >= 5) {
-        userUsername = null;
-      }
-    }
-
-    // Create new user with OAuth credentials
-    try {
-      console.log('📝 Creating new user with email:', userEmail);
-      user = await this.prisma.user.create({
-        data: {
-          username: userUsername,
-          email: userEmail,
-          password: oauthPassword, // OAuth users have a generated password
-          role: userRole,
-        },
-      });
-      console.log('✅ New user created:', user.id);
-    } catch (error: any) {
-      console.error('❌ Database error during user creation:', error);
-      if (error.code === 'P2002') {
-        // Unique constraint violation
-        throw new ConflictException('User with this email already exists');
-      }
-      throw new BadRequestException('Failed to create user. Please try again.');
-    }
-
-    // Generate JWT token
-    try {
-      const payload = { sub: user.id, email: user.email, role: user.role, username: user.username };
-      const access_token = await this.jwtService.signAsync(payload);
-      console.log('✅ JWT token generated successfully');
-
-      return {
-        access_token,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-        },
-        isNewUser: true, // New user created - they may want to select account type
-      };
-    } catch (error) {
-      console.error('❌ Error generating JWT token:', error);
-      throw new BadRequestException('Failed to generate authentication token. Please try again.');
     }
   }
 
+  // Finds or creates the account for a verified Apple/Google identity.
+  // The account is keyed on the provider's `sub`, which never changes for that person.
+  // The email in the request body is ignored: only an email the provider verified is used.
+  private async signInWithProvider(
+    provider: OAuthProvider,
+    identity: VerifiedIdentity,
+    oauthDto: OAuthSignInDto,
+  ): Promise<AuthResponseDto> {
+    const subField = provider === 'apple' ? 'appleSub' : 'googleSub';
+
+    // 1. Returning user: same provider account as before.
+    const existing = await this.prisma.user.findUnique({
+      where: provider === 'apple' ? { appleSub: identity.sub } : { googleSub: identity.sub },
+    });
+    if (existing) {
+      return this.buildAuthResponse(existing, false);
+    }
+
+    // 2. New provider account. Pick a role only from the self-service list.
+    const role = oauthDto.role ?? RoleEnum.ARTIST;
+    if (!isSelfServiceRole(role)) {
+      throw new ForbiddenException('This account type cannot be chosen at sign-in');
+    }
+
+    // 3. Never attach a provider sign-in to an account that already uses this email.
+    //    Linking needs the person to prove they own that account first (planned later).
+    //    Providers that hide or don't verify the email get a unique placeholder address.
+    const email = identity.email ?? `${provider}.${identity.sub}@users.c705.invalid`;
+    const emailTaken = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (emailTaken) {
+      throw new ConflictException(
+        'An account with this email already exists. Sign in the way you did before.',
+      );
+    }
+
+    const username = await this.suggestUsername(oauthDto.fullName);
+    // OAuth accounts never log in with a password, but the column is required.
+    // A random secret nobody knows keeps password login impossible for them.
+    const unusablePassword = await bcrypt.hash(randomBytes(32).toString('hex'), 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username,
+          email,
+          password: unusablePassword,
+          role,
+          [subField]: identity.sub,
+        },
+      });
+      return this.buildAuthResponse(user, true);
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        // Unique clash: the same sign-in raced itself, or the email was just taken.
+        throw new ConflictException(
+          'An account with this email already exists. Sign in the way you did before.',
+        );
+      }
+      throw new BadRequestException('Failed to create user. Please try again.');
+    }
+  }
+
+  // Builds "fullname-ab12c" style usernames; returns null if no free one is found quickly.
+  private async suggestUsername(fullName?: string): Promise<string | null> {
+    const base = fullName?.replace(/\s/g, '').toLowerCase();
+    if (!base) return null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = `${base}-${Math.random().toString(36).substring(2, 7)}`;
+      const taken = await this.prisma.user.findUnique({ where: { username: candidate } });
+      if (!taken) return candidate;
+    }
+    return null;
+  }
+
+  private async buildAuthResponse(
+    user: { id: string; email: string; role: RoleEnum; username: string | null },
+    isNewUser: boolean,
+  ): Promise<AuthResponseDto> {
+    const payload = { sub: user.id, email: user.email, role: user.role, username: user.username };
+    const access_token = await this.jwtService.signAsync(payload);
+    return {
+      access_token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      isNewUser,
+    };
+  }
+
   async updateUserRole(userId: string, newRole: string): Promise<AuthResponseDto> {
-    // Validate role
-    if (!Object.values(RoleEnum).includes(newRole as RoleEnum)) {
-      throw new BadRequestException(`Invalid role. Must be one of: ${Object.values(RoleEnum).join(', ')}`);
+    // Only self-service roles can be picked here. ADMIN and JOURNALIST are granted elsewhere.
+    if (!isSelfServiceRole(newRole)) {
+      throw new ForbiddenException('This account type cannot be chosen');
     }
 
     // Update user role

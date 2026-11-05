@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { OAuthTokenVerifier } from './oauth-token-verifier.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
@@ -26,6 +27,7 @@ if (!process.env.JWT_SECRET) {
   controllers: [AuthController],
   providers: [
     AuthService,
+    OAuthTokenVerifier,
     PrismaService,
     JwtStrategy,
     JwtAuthGuard,
