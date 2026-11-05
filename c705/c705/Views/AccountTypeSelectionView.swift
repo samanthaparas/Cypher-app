@@ -22,9 +22,9 @@ struct AccountTypeSelectionView: View {
     
     // Journalist is invite-only (assigned via admin); only these three are self-selectable
     let roles = [
-        ("ARTIST", "Artist", "music.note", "Create music, rap battles, and purchase beats"),
-        ("PRODUCER", "Producer", "slider.horizontal.3", "Connect with artists, engineers, and journalists"),
-        ("ENGINEER", "Engineer", "wrench.and.screwdriver", "Upload and sell beats")
+        ("ARTIST", "Artist", "music.note", "Join cyphers, record verses, and vote"),
+        ("PRODUCER", "Producer", "slider.horizontal.3", "Share free beats for cyphers"),
+        ("ENGINEER", "Engineer", "wrench.and.screwdriver", "Offer your studio and mixing services")
     ]
     
     var body: some View {
