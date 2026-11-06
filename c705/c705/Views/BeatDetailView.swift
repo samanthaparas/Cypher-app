@@ -33,6 +33,9 @@ struct BeatDetailView: View {
         beat.isPurchased == true || fullBeatUrl != nil
     }
     
+    // Beat sales are held for a later release. Set to true to bring the Purchase button back.
+    private let purchasesEnabled = false
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -93,35 +96,39 @@ struct BeatDetailView: View {
                     if let mood = beat.mood {
                         DetailRow(label: "Mood", value: mood)
                     }
-                    DetailRow(label: "Price", value: formatPrice(beat.price))
+                    if purchasesEnabled {
+                        DetailRow(label: "Price", value: formatPrice(beat.price))
+                    }
                 }
                 .padding(.horizontal)
                 
                 // Purchase section
                 if !isPurchased {
-                    VStack(spacing: 12) {
-                        Button(action: {
-                            showPurchaseSheet = true
-                        }) {
-                            HStack {
-                                Spacer()
-                                Text("Purchase Beat")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
-                                Spacer()
+                    if purchasesEnabled {
+                        VStack(spacing: 12) {
+                            Button(action: {
+                                showPurchaseSheet = true
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Text("Purchase Beat")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(12)
                             }
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-                        
-                        // License disclosure
-                        Text("Purchasing a beat grants a license as defined by the producer. Copyright ownership remains with the producer.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
                             .padding(.horizontal)
+                        
+                            // License disclosure
+                            Text("Purchasing a beat grants a license as defined by the producer. Copyright ownership remains with the producer.")
+                                .font(.system(size: 12))
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
                 } else {
                     VStack(spacing: 12) {
