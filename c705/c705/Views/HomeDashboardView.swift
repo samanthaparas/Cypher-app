@@ -49,11 +49,11 @@ struct HomeDashboardView: View {
                             action: { selectedTab = Tab.arena }
                         )
                         FeatureCard(
-                            title: "Producer Beat Store",
+                            title: "Producer Beats",
                             icon: "slider.horizontal.3",
                             artIcon: "waveform",
                             gradient: [Color(hex: 0x0FB5AE), Color(hex: 0x2F7BFF)],
-                            bullets: ["Upload & sell beats", "Browse by vibe, BPM, mood", "Licensing handled directly"],
+                            bullets: ["Share free beats for cyphers", "Browse by vibe, BPM, mood", "Use a beat in your next cypher"],
                             buttonTitle: "Browse Beats",
                             action: { selectedTab = Tab.beats }
                         )
