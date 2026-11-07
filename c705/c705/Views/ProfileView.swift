@@ -892,6 +892,9 @@ struct SettingsView: View {
     @State private var showTwoFactor = false
     @State private var showBlockedUsers = false
     @State private var legalURL: URL?
+    // The Terms of Service and Community Guidelines pages are not live yet (c705.online returns
+    // 404), so those two rows are hidden. Set to true when the pages exist.
+    private let legalPagesLive = false
     
     var userRole: String {
         authService.currentUser?.role ?? ""
@@ -1489,16 +1492,11 @@ struct SettingsView: View {
                         authService.logout()
                         dismiss()
                     }) {
-                        SettingsRow(icon: "arrow.right.square", title: "Sign Out", color: .red)
+                        SettingsRow(icon: "arrow.right.square", title: "Sign Out", color: .black)
                     }
                     
-                    Button(action: {
-                        showDeleteAccount = true
-                    }) {
-                        SettingsRow(icon: "trash", title: "Delete Account", color: .red)
-                    }
                 }
-                
+
                 // Private profile, who can comment or message, and blocked users.
                 // MARK: - Privacy & Safety (All Users)
                 Section(header: Text("Privacy & Safety")) {
@@ -1601,22 +1599,28 @@ struct SettingsView: View {
                 // inside the app, and shows the app version.
                 // MARK: - Legal & App Info (All Users)
                 Section(header: Text("Legal & App Info")) {
-                    Button(action: {
-                        legalURL = URL(string: "https://c705.online/terms")
-                    }) {
-                        SettingsRow(icon: "doc.text", title: "Terms of Service", color: .black)
+                    if legalPagesLive {
+                        Button(action: {
+                            legalURL = URL(string: "https://c705.online/terms")
+                        }) {
+                            SettingsRow(icon: "doc.text", title: "Terms of Service", color: .black)
+                        }
                     }
 
                     Button(action: {
-                        legalURL = URL(string: "https://c705.online/privacy")
+                        // Temporary: c705.online/privacy is not live yet, so this opens the published
+                        // privacy policy. Switch back to https://c705.online/privacy when that page exists.
+                        legalURL = URL(string: "https://docs.google.com/document/d/e/2PACX-1vQf_VYpWhkAIemvsL467tLbSr8mnsg4DElseYw0F0niDyLoyd578h-jFV24qWHfVVJlqDcDXT_Rhd5U/pub")
                     }) {
                         SettingsRow(icon: "hand.raised.fill", title: "Privacy Policy", color: .black)
                     }
                     
-                    Button(action: {
-                        legalURL = URL(string: "https://c705.online/community-guidelines")
-                    }) {
-                        SettingsRow(icon: "book.fill", title: "Community Guidelines", color: .black)
+                    if legalPagesLive {
+                        Button(action: {
+                            legalURL = URL(string: "https://c705.online/community-guidelines")
+                        }) {
+                            SettingsRow(icon: "book.fill", title: "Community Guidelines", color: .black)
+                        }
                     }
                     
                     HStack {
@@ -1628,9 +1632,22 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        // TODO: Contact support
+                        // Opens the Mail app with a new message to the support address.
+                        if let url = URL(string: "mailto:c705support@gmail.com?subject=C705%20Support") {
+                            UIApplication.shared.open(url)
+                        }
                     }) {
                         SettingsRow(icon: "envelope.fill", title: "Contact Support", color: .black)
+                    }
+                }
+
+                // Deleting an account is permanent, so it is the very last thing in Settings,
+                // far from Sign Out.
+                Section(footer: Text("Deleting your account is permanent.")) {
+                    Button(action: {
+                        showDeleteAccount = true
+                    }) {
+                        SettingsRow(icon: "trash", title: "Delete Account", color: .red)
                     }
                 }
             }
